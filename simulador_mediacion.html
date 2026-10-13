@@ -1,0 +1,2412 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Simulador Dinámico de Mediación MASC — Instituto de la Judicatura</title>
+  <style>
+    :root {
+      --bg-main: #0b1120;
+      --bg-card: #131c31;
+      --bg-card-hover: #1a2642;
+      --bg-surface: #1e293b;
+      --border-color: #273553;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --text-dim: #64748b;
+      --primary: #3b82f6;
+      --primary-hover: #2563eb;
+      --accent: #f59e0b;
+      --success: #10b981;
+      --danger: #ef4444;
+      --purple: #8b5cf6;
+      --navy-light: #1e3a8a;
+      --radius-sm: 6px;
+      --radius-md: 10px;
+      --radius-lg: 16px;
+      --shadow-sm: 0 2px 4px rgba(0,0,0,0.3);
+      --shadow-md: 0 4px 12px rgba(0,0,0,0.4);
+      --shadow-lg: 0 10px 25px rgba(0,0,0,0.5);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
+
+    body {
+      background-color: var(--bg-main);
+      color: var(--text-main);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      line-height: 1.5;
+    }
+
+    /* Top Navigation Header */
+    header {
+      background: linear-gradient(180deg, #162035 0%, #0e172a 100%);
+      border-bottom: 1px solid var(--border-color);
+      padding: 1rem 1.5rem;
+      position: sticky;
+      top: 0;
+      z-index: 40;
+      box-shadow: var(--shadow-md);
+    }
+
+    .header-container {
+      max-width: 1300px;
+      margin: 0 auto;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .brand-block {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .brand-icon {
+      width: 42px;
+      height: 42px;
+      background: linear-gradient(135deg, #1d4ed8, #3b82f6);
+      border-radius: var(--radius-md);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      font-size: 1.25rem;
+      color: #fff;
+      box-shadow: 0 0 14px rgba(59, 130, 246, 0.4);
+    }
+
+    .brand-title {
+      font-size: 1.15rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+
+    .brand-subtitle {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .metrics-bar {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+
+    .metric-pill {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      padding: 0.35rem 0.85rem;
+      border-radius: 9999px;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.85rem;
+    }
+
+    .metric-value {
+      font-weight: 700;
+      color: var(--accent);
+    }
+
+    .progress-bar-container {
+      width: 100px;
+      height: 8px;
+      background: var(--bg-surface);
+      border-radius: 9999px;
+      overflow: hidden;
+      display: inline-block;
+      vertical-align: middle;
+      border: 1px solid #334155;
+    }
+
+    .progress-bar-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #3b82f6, #10b981);
+      width: 0%;
+      transition: width 0.4s ease;
+    }
+
+    /* Nav Tabs */
+    nav.nav-tabs {
+      background: #0f172a;
+      border-bottom: 1px solid var(--border-color);
+      padding: 0.5rem 1.5rem 0;
+    }
+
+    .nav-container {
+      max-width: 1300px;
+      margin: 0 auto;
+      display: flex;
+      gap: 0.5rem;
+      overflow-x: auto;
+      scrollbar-width: none;
+    }
+    .nav-container::-webkit-scrollbar { display: none; }
+
+    .nav-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      padding: 0.75rem 1.25rem;
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+      border-bottom: 3px solid transparent;
+      transition: all 0.2s ease;
+      white-space: nowrap;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .nav-btn:hover {
+      color: var(--text-main);
+      background: rgba(255, 255, 255, 0.03);
+    }
+
+    .nav-btn.active {
+      color: var(--primary);
+      border-bottom-color: var(--primary);
+      background: rgba(59, 130, 246, 0.08);
+      border-top-left-radius: var(--radius-sm);
+      border-top-right-radius: var(--radius-sm);
+    }
+
+    /* Main Container */
+    main {
+      max-width: 1300px;
+      margin: 1.5rem auto;
+      padding: 0 1.5rem 3rem;
+      width: 100%;
+      flex: 1;
+    }
+
+    .tab-content {
+      display: none;
+      animation: fadeIn 0.25s ease-in-out;
+    }
+
+    .tab-content.active {
+      display: block;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Cards */
+    .card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-lg);
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 1rem;
+      padding-bottom: 0.75rem;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      flex-wrap: wrap;
+      gap: 0.75rem;
+    }
+
+    .card-title {
+      font-size: 1.25rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .tag-badge {
+      display: inline-block;
+      font-size: 0.72rem;
+      font-weight: 700;
+      padding: 0.2rem 0.65rem;
+      border-radius: 9999px;
+      text-transform: uppercase;
+      background: rgba(59, 130, 246, 0.15);
+      color: var(--primary);
+      border: 1px solid rgba(59, 130, 246, 0.3);
+    }
+
+    .tag-badge.accent {
+      background: rgba(245, 158, 11, 0.15);
+      color: var(--accent);
+      border-color: rgba(245, 158, 11, 0.3);
+    }
+
+    .tag-badge.purple {
+      background: rgba(139, 92, 246, 0.15);
+      color: var(--purple);
+      border-color: rgba(139, 92, 246, 0.3);
+    }
+
+    /* Buttons */
+    .btn-action {
+      background: var(--primary);
+      color: #fff;
+      border: none;
+      padding: 0.6rem 1.2rem;
+      border-radius: var(--radius-md);
+      font-weight: 600;
+      font-size: 0.88rem;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.45rem;
+    }
+    .btn-action:hover {
+      background: var(--primary-hover);
+      transform: translateY(-1px);
+    }
+    .btn-action:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .btn-accent {
+      background: linear-gradient(135deg, #d97706, #f59e0b);
+      color: #000;
+      font-weight: 700;
+    }
+    .btn-accent:hover {
+      background: linear-gradient(135deg, #b45309, #d97706);
+      color: #fff;
+    }
+
+    .btn-secondary {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-color);
+      color: var(--text-muted);
+    }
+    .btn-secondary:hover {
+      background: var(--bg-card-hover);
+      color: var(--text-main);
+    }
+
+    /* DYNAMIC SIMULATOR TWO-COLUMN LAYOUT */
+    .sim-layout {
+      display: grid;
+      grid-template-columns: 340px 1fr;
+      gap: 1.5rem;
+      align-items: start;
+    }
+
+    @media (max-width: 992px) {
+      .sim-layout { grid-template-columns: 1fr; }
+    }
+
+    /* Left Sidebar: Case Dossier & Anatomy */
+    .case-dossier {
+      background: #0d1527;
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-lg);
+      padding: 1.25rem;
+    }
+
+    .dossier-title {
+      font-size: 0.85rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--accent);
+      font-weight: 800;
+      margin-bottom: 0.75rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .party-card {
+      background: var(--bg-surface);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: var(--radius-md);
+      padding: 0.85rem;
+      margin-bottom: 0.75rem;
+    }
+
+    .party-card-header {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      margin-bottom: 0.4rem;
+    }
+
+    .party-avatar {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: #2563eb;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 0.85rem;
+    }
+    .party-avatar.p2 {
+      background: #7c3aed;
+    }
+
+    .party-name {
+      font-weight: 700;
+      font-size: 0.95rem;
+    }
+    .party-role {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+
+    .party-data-item {
+      font-size: 0.8rem;
+      color: #cbd5e1;
+      margin-top: 0.3rem;
+      line-height: 1.35;
+    }
+    .party-data-item strong {
+      color: #93c5fd;
+    }
+
+    .harvard-matrix-box {
+      background: rgba(15, 23, 42, 0.8);
+      border: 1px solid rgba(59, 130, 246, 0.25);
+      border-radius: var(--radius-md);
+      padding: 0.85rem;
+      margin-top: 0.75rem;
+      font-size: 0.8rem;
+    }
+    .harvard-matrix-box h5 {
+      color: #60a5fa;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 0.4rem;
+    }
+
+    /* Right Main Column: Interactive Dialogue Table */
+    .dialogue-table-card {
+      background: #111a2e;
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-lg);
+      padding: 1.5rem;
+    }
+
+    .phase-stepper-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 1.25rem;
+      padding-bottom: 0.75rem;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+
+    .phase-stepper-title {
+      font-size: 1rem;
+      font-weight: 700;
+      color: #93c5fd;
+    }
+
+    /* Speech Dialogue Bubbles */
+    .dialogue-feed {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .speech-bubble {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.75rem;
+      background: var(--bg-surface);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      border-radius: var(--radius-md);
+      padding: 1rem;
+      position: relative;
+    }
+
+    .speech-bubble.party1 {
+      border-left: 4px solid #3b82f6;
+    }
+    .speech-bubble.party2 {
+      border-left: 4px solid #8b5cf6;
+    }
+    .speech-bubble.narrator {
+      border-left: 4px solid var(--accent);
+      background: rgba(245, 158, 11, 0.05);
+    }
+
+    .bubble-author {
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: #93c5fd;
+      margin-bottom: 0.25rem;
+    }
+    .speech-bubble.party2 .bubble-author {
+      color: #c4b5fd;
+    }
+    .speech-bubble.narrator .bubble-author {
+      color: var(--accent);
+    }
+
+    .bubble-text {
+      font-size: 0.9rem;
+      color: #e2e8f0;
+      line-height: 1.45;
+    }
+
+    /* Interactive Decision Panel */
+    .mediator-action-box {
+      background: #090e1a;
+      border: 1px solid #334155;
+      border-radius: var(--radius-md);
+      padding: 1.25rem;
+      margin-top: 1rem;
+    }
+
+    .mediator-prompt-title {
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: var(--accent);
+      margin-bottom: 0.85rem;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+
+    .option-btn {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      padding: 0.85rem 1rem;
+      color: var(--text-main);
+      text-align: left;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      font-size: 0.88rem;
+      display: flex;
+      align-items: flex-start;
+      gap: 0.75rem;
+      margin-bottom: 0.65rem;
+      width: 100%;
+    }
+
+    .option-btn:hover:not(:disabled) {
+      border-color: var(--primary);
+      background: var(--bg-card-hover);
+      transform: translateX(4px);
+    }
+
+    .option-letter {
+      background: #334155;
+      color: #e2e8f0;
+      width: 24px;
+      height: 24px;
+      border-radius: 4px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      flex-shrink: 0;
+      font-size: 0.78rem;
+    }
+
+    .option-btn.selected-correct {
+      border-color: var(--success);
+      background: rgba(16, 185, 129, 0.12);
+    }
+    .option-btn.selected-correct .option-letter {
+      background: var(--success);
+      color: #fff;
+    }
+
+    .option-btn.selected-incorrect {
+      border-color: var(--danger);
+      background: rgba(239, 68, 68, 0.12);
+    }
+    .option-btn.selected-incorrect .option-letter {
+      background: var(--danger);
+      color: #fff;
+    }
+
+    /* Arbiter Dynamic Banner */
+    .arbiter-card {
+      background: #060a14;
+      border: 1px solid #334155;
+      border-radius: var(--radius-md);
+      padding: 1.15rem;
+      margin-top: 1rem;
+      display: none;
+      animation: fadeIn 0.25s ease;
+    }
+    .arbiter-card.active { display: block; }
+    .arbiter-card.approved { border-left: 5px solid var(--success); }
+    .arbiter-card.approved .arbiter-header { color: var(--success); }
+    .arbiter-card.rejected { border-left: 5px solid var(--danger); }
+    .arbiter-card.rejected .arbiter-header { color: var(--danger); }
+
+    .arbiter-header {
+      font-weight: 800;
+      font-size: 0.9rem;
+      margin-bottom: 0.5rem;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+    }
+
+    .arbiter-body {
+      font-size: 0.88rem;
+      color: #cbd5e1;
+      margin-bottom: 0.5rem;
+      line-height: 1.4;
+    }
+
+    .arbiter-cite {
+      font-size: 0.8rem;
+      color: var(--accent);
+      background: rgba(245, 158, 11, 0.08);
+      padding: 0.4rem 0.65rem;
+      border-radius: var(--radius-sm);
+      border-left: 3px solid var(--accent);
+    }
+
+    /* MODAL: CUSTOM CASE INTAKE */
+    .modal-overlay {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0, 0, 0, 0.75);
+      backdrop-filter: blur(4px);
+      z-index: 100;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 1.5rem;
+    }
+    .modal-overlay.open { display: flex; }
+
+    .modal-box {
+      background: #10192e;
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-lg);
+      max-width: 760px;
+      width: 100%;
+      max-height: 90vh;
+      overflow-y: auto;
+      padding: 1.5rem;
+      box-shadow: var(--shadow-lg);
+    }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1rem;
+      padding-bottom: 0.75rem;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .modal-close {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      font-size: 1.5rem;
+      cursor: pointer;
+    }
+    .modal-close:hover { color: #fff; }
+
+    .textarea-custom {
+      width: 100%;
+      height: 150px;
+      background: #090e1a;
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      padding: 0.85rem;
+      color: var(--text-main);
+      font-size: 0.9rem;
+      resize: vertical;
+      margin: 0.5rem 0 1rem;
+      outline: none;
+    }
+    .textarea-custom:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 8px rgba(59, 130, 246, 0.3);
+    }
+
+    /* Timeline and Steps (from Tab 1) */
+    .steps-timeline {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 0.75rem;
+      margin-bottom: 1.5rem;
+    }
+    .step-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      padding: 1rem;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    .step-card:hover {
+      border-color: var(--primary);
+      background: var(--bg-card-hover);
+      transform: translateY(-2px);
+    }
+    .step-card.active-step {
+      border-color: var(--primary);
+      background: rgba(59, 130, 246, 0.12);
+      box-shadow: 0 0 15px rgba(59, 130, 246, 0.25);
+    }
+    .step-num {
+      display: inline-flex;
+      width: 26px;
+      height: 26px;
+      border-radius: 50%;
+      background: var(--navy-light);
+      align-items: center;
+      justify-content: center;
+      font-size: 0.8rem;
+      font-weight: 800;
+      margin-bottom: 0.5rem;
+      color: #93c5fd;
+    }
+    .step-card.active-step .step-num {
+      background: var(--primary);
+      color: #fff;
+    }
+    .step-name {
+      font-size: 0.9rem;
+      font-weight: 700;
+      line-height: 1.3;
+    }
+
+    .step-detail-box {
+      background: #101828;
+      border: 1px solid #1e293b;
+      border-radius: var(--radius-lg);
+      padding: 1.5rem;
+      border-left: 5px solid var(--primary);
+    }
+    .detail-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 1.25rem;
+      margin-top: 1rem;
+    }
+    .detail-item h4 {
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+      margin-bottom: 0.35rem;
+    }
+    .detail-item p, .detail-item ul {
+      font-size: 0.9rem;
+      color: #cbd5e1;
+    }
+    .detail-item ul { padding-left: 1.2rem; }
+    .alert-fatal {
+      background: rgba(239, 68, 68, 0.1);
+      border: 1px solid rgba(239, 68, 68, 0.3);
+      padding: 0.75rem 1rem;
+      border-radius: var(--radius-md);
+      color: #fca5a5;
+      font-size: 0.85rem;
+      margin-top: 1rem;
+    }
+
+    /* Checklist & Quiz styling */
+    .checklist-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 0.65rem;
+      margin-top: 1rem;
+    }
+    .checklist-item {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-sm);
+      padding: 0.65rem 0.85rem;
+      display: flex;
+      align-items: center;
+      gap: 0.65rem;
+      font-size: 0.85rem;
+      cursor: pointer;
+    }
+    .checklist-item.checked {
+      background: rgba(16, 185, 129, 0.1);
+      border-color: rgba(16, 185, 129, 0.4);
+      color: #6ee7b7;
+    }
+    .checklist-item input[type="checkbox"] {
+      width: 16px;
+      height: 16px;
+      accent-color: var(--success);
+    }
+
+    .question-block {
+      margin-bottom: 2rem;
+      padding-bottom: 1.5rem;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    }
+    .question-header {
+      font-size: 1rem;
+      font-weight: 700;
+      margin-bottom: 0.85rem;
+    }
+    .quiz-options {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .stats-summary-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+    .stat-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      padding: 1.25rem;
+      text-align: center;
+    }
+    .stat-number {
+      font-size: 1.8rem;
+      font-weight: 800;
+      color: var(--primary);
+    }
+    .stat-label {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-top: 0.25rem;
+    }
+    .history-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.85rem;
+      margin-top: 1rem;
+    }
+    .history-table th, .history-table td {
+      padding: 0.65rem 0.85rem;
+      text-align: left;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    }
+    .history-table th {
+      color: var(--text-dim);
+      text-transform: uppercase;
+      font-size: 0.75rem;
+      background: #0f172a;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- HEADER -->
+  <header>
+    <div class="header-container">
+      <div class="brand-block">
+        <div class="brand-icon">M</div>
+        <div>
+          <div class="brand-title">Simulador Dinámico de Mediación Judicial MASC</div>
+          <div class="brand-subtitle">Instituto de Mecanismos Alternativos · Instituto de la Judicatura</div>
+        </div>
+      </div>
+
+      <div class="metrics-bar">
+        <div class="metric-pill">
+          <span>📅 Racha:</span>
+          <span class="metric-value" id="streakDisplay">1 día</span>
+        </div>
+        <div class="metric-pill">
+          <span>🎯 Preparación:</span>
+          <span class="metric-value" id="scoreDisplay">0%</span>
+          <div class="progress-bar-container">
+            <div class="progress-bar-fill" id="scoreBar"></div>
+          </div>
+        </div>
+        <button class="btn-action btn-secondary" onclick="resetProgress()" style="padding: 0.35rem 0.75rem; font-size: 0.75rem;">
+          🔄 Reiniciar
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- NAVIGATION TABS -->
+  <nav class="nav-tabs">
+    <div class="nav-container">
+      <button class="nav-btn active" onclick="switchTab('cases')">
+        ⚖️ 1. Simulador Dinámico de Casos
+      </button>
+      <button class="nav-btn" onclick="switchTab('map')">
+        🗺️ 2. Mapa de las 6 Fases
+      </button>
+      <button class="nav-btn" onclick="switchTab('dam-trainer')">
+        🎤 3. Taller del DAM & Parafraseo
+      </button>
+      <button class="nav-btn" onclick="switchTab('quiz')">
+        📝 4. Banco de Examen
+      </button>
+      <button class="nav-btn" onclick="switchTab('audit')">
+        🛡️ 5. Reporte del Árbitro
+      </button>
+    </div>
+  </nav>
+
+  <!-- MAIN CONTAINER -->
+  <main>
+
+    <!-- TAB 1: DYNAMIC SIMULATOR (CORE REFACTORED MODULE) -->
+    <section id="tab-cases" class="tab-content active">
+      
+      <!-- Top Action Bar for Case Ingestion -->
+      <div class="card" style="margin-bottom: 1rem; padding: 1.1rem 1.5rem;">
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.85rem;">
+          <div>
+            <span style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-dim); font-weight: 700;">Caso Activo en la Mesa:</span>
+            <h3 id="currentCaseTitle" style="font-size: 1.15rem; font-weight: 800; color: #93c5fd;">
+              Lupita y Andrea (Conflicto Sucesorio por Testamento y Piano Familiar)
+            </h3>
+          </div>
+
+          <div style="display: flex; gap: 0.6rem; flex-wrap: wrap;">
+            <button class="btn-action btn-accent" onclick="loadLupitaAndreaPreset()">
+              ⚡ Cargar Caso de Prueba (Lupita y Andrea)
+            </button>
+            <button class="btn-action btn-secondary" onclick="openCustomCaseModal()">
+              📂 Pegar / Cargar Caso Personalizado
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Two-Column Dynamic Simulator Layout -->
+      <div class="sim-layout">
+        
+        <!-- Left Column: Case Dossier / Anatomía del Conflicto -->
+        <aside class="case-dossier">
+          <div class="dossier-title">
+            <span>📋 Anatomía del Caso</span>
+            <span class="tag-badge" id="dossierTag">Dinámico</span>
+          </div>
+
+          <div style="font-size: 0.8rem; color: #94a3b8; margin-bottom: 0.75rem;" id="dossierSummary">
+            Cargando conflicto...
+          </div>
+
+          <!-- Party 1 Card -->
+          <div class="party-card" id="partyCard1">
+            <div class="party-card-header">
+              <div class="party-avatar" id="avatarP1">P1</div>
+              <div>
+                <div class="party-name" id="nameP1">Parte 1</div>
+                <div class="party-role" id="roleP1">Rol / Ocupación</div>
+              </div>
+            </div>
+            <div class="party-data-item"><strong>Situación:</strong> <span id="sitP1">-</span></div>
+            <div class="party-data-item"><strong>Postura Rígida:</strong> <span id="posP1">-</span></div>
+            <div class="party-data-item"><strong>Interés Real:</strong> <span id="intP1" style="color: #6ee7b7;">-</span></div>
+          </div>
+
+          <!-- Party 2 Card -->
+          <div class="party-card" id="partyCard2">
+            <div class="party-card-header">
+              <div class="party-avatar p2" id="avatarP2">P2</div>
+              <div>
+                <div class="party-name" id="nameP2">Parte 2</div>
+                <div class="party-role" id="roleP2">Rol / Ocupación</div>
+              </div>
+            </div>
+            <div class="party-data-item"><strong>Situación:</strong> <span id="sitP2">-</span></div>
+            <div class="party-data-item"><strong>Postura Rígida:</strong> <span id="posP2">-</span></div>
+            <div class="party-data-item"><strong>Interés Real:</strong> <span id="intP2" style="color: #6ee7b7;">-</span></div>
+          </div>
+
+          <!-- Harvard & 3P Anatomy Box -->
+          <div class="harvard-matrix-box">
+            <h5>🎯 Clave Metodológica de Examen (Modelo Harvard)</h5>
+            <p id="harvardGuidance" style="line-height: 1.35; color: #e2e8f0;">
+              El mediador debe desmontar la posición rígida inicial y conectar los intereses comunes de las partes.
+            </p>
+          </div>
+        </aside>
+
+        <!-- Right Column: Mesa de Diálogo Activa por Fases -->
+        <div class="dialogue-table-card">
+          
+          <!-- Phase Stepper Control -->
+          <div class="phase-stepper-bar">
+            <div>
+              <span class="tag-badge" id="simPhaseBadge">Fase 1 de 6</span>
+              <div class="phase-stepper-title" id="simPhaseTitle">
+                1. Discurso de Apertura de la Mediación (DAM)
+              </div>
+            </div>
+
+            <div style="display: flex; gap: 0.4rem;">
+              <button class="btn-action btn-secondary" onclick="prevSimPhase()" id="btnPrevPhase" style="padding: 0.35rem 0.75rem; font-size: 0.8rem;" disabled>
+                ◀ Fase Anterior
+              </button>
+              <button class="btn-action btn-secondary" onclick="nextSimPhase()" id="btnNextPhase" style="padding: 0.35rem 0.75rem; font-size: 0.8rem;">
+                Fase Siguiente ▶
+              </button>
+            </div>
+          </div>
+
+          <!-- Speech Dialogue Flow of the Parties -->
+          <div class="dialogue-feed" id="simDialogueFeed">
+            <!-- Dynamically generated speech bubbles based on case data -->
+          </div>
+
+          <!-- Mediator Dilemma & Action Box -->
+          <div class="mediator-action-box">
+            <div class="mediator-prompt-title" id="mediatorPromptTitle">
+              ⚖️ Decisión del Mediador en esta Etapa:
+            </div>
+            <div id="simOptionsContainer">
+              <!-- Dynamically generated tactical options for the student -->
+            </div>
+          </div>
+
+          <!-- Arbiter Adversarial Dynamic Audit Box -->
+          <div class="arbiter-card" id="simArbiterCard">
+            <div class="arbiter-header" id="simArbiterStatus"></div>
+            <div class="arbiter-body" id="simArbiterFeedback"></div>
+            <div class="arbiter-cite" id="simArbiterCite"></div>
+          </div>
+
+        </div>
+
+      </div>
+    </section>
+
+    <!-- TAB 2: MAPA DE LAS 6 FASES DEL INSTITUTO -->
+    <section id="tab-map" class="tab-content">
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <h2 class="card-title">Secuencia Canónica de las 6 Fases de Mediación</h2>
+            <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: 0.25rem;">
+              Doctrina oficial del Instituto de Mecanismos Alternativos (Lámina 125, facilitadora Rubinia Teres Sandoval Salazar).
+            </p>
+          </div>
+          <span class="tag-badge">Doctrina Oficial</span>
+        </div>
+
+        <div class="steps-timeline" id="timelineContainer"></div>
+        <div class="step-detail-box" id="stepDetailView"></div>
+      </div>
+    </section>
+
+    <!-- TAB 3: TALLER DEL DAM & PARAFRASEO -->
+    <section id="tab-dam-trainer" class="tab-content">
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <h2 class="card-title">Taller 1: Verificador Interactivo del DAM (Lámina 127)</h2>
+            <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: 0.25rem;">
+              Rúbrica técnica de los 11 elementos obligatorios del Discurso de Apertura del Mediador.
+            </p>
+          </div>
+          <span class="tag-badge">Checklist Oficial</span>
+        </div>
+
+        <p style="font-size: 0.9rem; color: #cbd5e1; margin-bottom: 0.75rem;">
+          Redacta tu Discurso de Apertura adaptado al caso en curso. La rúbrica en vivo escaneará la presencia de los 11 componentes del Instituto:
+        </p>
+
+        <textarea id="damTextInput" class="textarea-custom" placeholder="Buenas tardes, bienvenidos a este centro de mediación. Mi nombre es... felicito su decisión voluntaria de asistir..."></textarea>
+        
+        <div style="display: flex; gap: 0.5rem; justify-content: flex-end; margin-bottom: 1rem;">
+          <button class="btn-action" onclick="analyzeDamText()">🔍 Auditar Discurso con Árbitro</button>
+        </div>
+
+        <div class="checklist-grid" id="damChecklistGrid"></div>
+
+        <div class="arbiter-card" id="damArbiterCard" style="margin-top: 1.25rem;">
+          <div class="arbiter-header" id="damArbiterStatus"></div>
+          <div class="arbiter-body" id="damArbiterFeedback"></div>
+        </div>
+      </div>
+
+      <!-- Taller 2: Parafraseo desapasionado -->
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <h2 class="card-title">Taller 2: El Arte de la Traducción Desapasionada</h2>
+            <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: 0.25rem;">
+              Neutralización de lenguaje hostil y rescate de necesidades legítimas (Presentación 30/09).
+            </p>
+          </div>
+          <span class="tag-badge">Técnica Verbal</span>
+        </div>
+
+        <div style="background:#0f172a; border-radius:var(--radius-md); padding:1rem; border-left:4px solid var(--accent); margin-bottom:1rem; font-size:0.92rem;" id="paraphrasePromptScenario">
+          <!-- Loaded dynamically based on case -->
+        </div>
+
+        <textarea id="paraphraseInput" class="textarea-custom" placeholder="Si he comprendido bien, lo que usted necesita es..."></textarea>
+
+        <div style="display: flex; justify-content: flex-end;">
+          <button class="btn-action" onclick="auditParaphrase()">🛡️ Auditar Parafraseo</button>
+        </div>
+
+        <div class="arbiter-card" id="paraphraseArbiterCard">
+          <div class="arbiter-header" id="paraphraseArbiterStatus"></div>
+          <div class="arbiter-body" id="paraphraseArbiterFeedback"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 4: BANCO DE PREGUNTAS TIPO EXAMEN -->
+    <section id="tab-quiz" class="tab-content">
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <h2 class="card-title">Banco de Reactivos de Certificación MASC</h2>
+            <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: 0.25rem;">
+              Reactivos de opción múltiple con desglose exhaustivo de los distractores y citas legales.
+            </p>
+          </div>
+          <span class="tag-badge">6 Reactivos Canónicos</span>
+        </div>
+
+        <div id="quizContainer"></div>
+
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 1.5rem;">
+          <span id="quizScoreReport" style="font-size: 0.9rem; font-weight: 700; color: var(--accent);"></span>
+          <button class="btn-action" onclick="resetQuiz()">🔁 Reintentar Reactivos</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 5: REPORTE DEL ÁRBITRO & HISTORIAL -->
+    <section id="tab-audit" class="tab-content">
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <h2 class="card-title">Auditoría General y Diagnóstico de Preparación</h2>
+            <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: 0.25rem;">
+              Consolidado de desempeño basado en rigor técnico y persistencia local (`localStorage`).
+            </p>
+          </div>
+          <span class="tag-badge">Historial Persistente</span>
+        </div>
+
+        <div class="stats-summary-grid">
+          <div class="stat-card">
+            <div class="stat-number" id="statCasesCount">0/6</div>
+            <div class="stat-label">Fases Acreditadas</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-number" id="statQuizCount">0/6</div>
+            <div class="stat-label">Reactivos Examen</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-number" id="statDamScore">0%</div>
+            <div class="stat-label">Rúbrica DAM</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-number" id="statGlobalIndex">0%</div>
+            <div class="stat-label">Índice Global</div>
+          </div>
+        </div>
+
+        <div style="background: rgba(59, 130, 246, 0.08); border: 1px solid rgba(59, 130, 246, 0.2); border-radius: var(--radius-md); padding: 1rem; margin-bottom: 1.5rem; font-size: 0.85rem; color: #93c5fd;">
+          <strong>Fórmula Transparente del Índice de Preparación (0 a 100%):</strong><br>
+          <code>Índice = (Fases Acreditadas del Caso * 35%) + (Reactivos Examen * 45%) + (Checklist DAM * 20%)</code>
+        </div>
+
+        <h3 style="font-size: 1rem; font-weight: 700; margin-bottom: 0.75rem;">Registro de Intentos y Auditoría Reciente</h3>
+        <div style="overflow-x: auto;">
+          <table class="history-table">
+            <thead>
+              <tr>
+                <th>Hora</th>
+                <th>Módulo</th>
+                <th>Acción / Caso</th>
+                <th>Dictamen del Árbitro</th>
+              </tr>
+            </thead>
+            <tbody id="historyTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- MODAL: CARGAR CASO PERSONALIZADO -->
+  <div class="modal-overlay" id="customCaseModal">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3 style="font-size: 1.15rem; font-weight: 700;">📂 Ingesta de Caso Práctico en Texto Libre</h3>
+        <button class="modal-close" onclick="closeCustomCaseModal()">&times;</button>
+      </div>
+      <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.75rem;">
+        Pega la redacción de cualquier caso de conflicto (familiar, sucesorio, civil, escolar o vecinal). El motor analizará automáticamente las partes, antecedentes y contrapondrá posiciones rígidas frente a intereses de fondo.
+      </p>
+
+      <textarea id="customCaseInput" class="textarea-custom" style="height: 180px;" placeholder="Ejemplo: Pedro y María tienen un conflicto vecinal debido a un árbol frutal que arroja hojas en el patio de María..."></textarea>
+
+      <div style="display: flex; gap: 0.5rem; justify-content: space-between; align-items: center; flex-wrap: wrap;">
+        <button class="btn-action btn-secondary" onclick="loadLupitaAndreaInModal()">
+          Insertar Caso Lupita y Andrea
+        </button>
+        <div style="display: flex; gap: 0.5rem;">
+          <button class="btn-action btn-secondary" onclick="closeCustomCaseModal()">Cancelar</button>
+          <button class="btn-action" onclick="processAndLoadCustomCase()">⚡ Analizar e Iniciar Caso</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- JAVASCRIPT APPLICATION CORE -->
+  <script>
+    /* ==========================================================================
+       1. DATA DOCTRINE & CANONICAL PHASES (INSTITUTE OF JUDICATURE)
+       ========================================================================== */
+
+    const MASC_PHASES = [
+      {
+        id: 1,
+        name: "1. Discurso de Apertura de la Mediación (DAM)",
+        short: "DAM / Apertura",
+        objective: "Encuadre inicial, legitimación del facilitador, establecimiento de reglas de convivencia, consentimiento informado y firma de confidencialidad.",
+        principles: ["Imparcialidad", "Voluntariedad", "Confidencialidad", "Neutralidad", "Flexibilidad"],
+        role: "Facilitador neutral, puente de comunicación. No juzga ni decide.",
+        tools: ["Discurso de apertura", "Explicación de caucus", "Destrucción de notas", "Convenio de confidencialidad"],
+        fatalErrors: "Actuar como juez o emitir juicios de valor sobre el caso."
+      },
+      {
+        id: 2,
+        name: "2. Recolección de la Información",
+        short: "Recolección",
+        objective: "Escuchar activamente a cada parte, permitir el desahogo emocional y recopilar los hechos y perspectivas individuales.",
+        principles: ["Equidad en turnos", "Imparcialidad", "Confidencialidad"],
+        role: "Escucha activa, receptor empático sin dar la razón.",
+        tools: ["Traducción desapasionada (parafraseo)", "Preguntas abiertas clarificadoras"],
+        fatalErrors: "Convalidar adjetivos peyorativos o desequilibrar los turnos de habla."
+      },
+      {
+        id: 3,
+        name: "3. Identificación de Temas Principales y Agenda",
+        short: "Temas y Agenda",
+        objective: "Separar las posiciones rígidas de los intereses y necesidades reales. Fijar los temas comunes a resolver en un rotafolio.",
+        principles: ["Neutralidad", "Transparencia", "Flexibilidad"],
+        role: "Organizador estructurado. Transita del 'tú contra mí' al 'ambos contra el problema'.",
+        tools: ["Preguntas circulares", "Rotafolio visible", "Modelo de Harvard"],
+        fatalErrors: "Titular los temas con lenguaje acusatorio de las partes."
+      },
+      {
+        id: 4,
+        name: "4. Generación de Opciones",
+        short: "Generación",
+        objective: "Promover la creatividad y la lluvia de ideas sin juzgarlas prematuramente.",
+        principles: ["Creatividad", "Autodeterminación", "Flexibilidad"],
+        role: "Catalizador de ideas. Estimula a que las partes propongan fórmulas viables.",
+        tools: ["Lluvia de ideas", "Técnica del replanteo", "Sesiones privadas (caucus)"],
+        fatalErrors: "Imponer la solución personal del mediador."
+      },
+      {
+        id: 5,
+        name: "5. Evaluación de Opciones",
+        short: "Evaluación",
+        objective: "Examinar la viabilidad legal, económica y práctica mediante criterios objetivos.",
+        principles: ["Legalidad", "Equidad", "Honestidad"],
+        role: "Agente de la realidad. Cuestiona constructivamente la factibilidad.",
+        tools: ["Examen de realidad", "Preguntas '¿Qué pasaría si...?'", "Análisis MAAN"],
+        fatalErrors: "Permitir acuerdos ilegales o manifiestamente desproporcionados."
+      },
+      {
+        id: 6,
+        name: "6. Acuerdo",
+        short: "Acuerdo / Cierre",
+        objective: "Formalizar los compromisos en un convenio escrito con validez jurídica y ejecutabilidad.",
+        principles: ["Legalidad", "Certeza jurídica", "Equidad"],
+        role: "Redactor neutral de la voluntad de las partes.",
+        tools: ["Convenio con obligaciones claras", "Cláusula MASC futura", "Ratificación"],
+        fatalErrors: "Dejar acuerdos vagos o ignorar la eficacia de Cosa Juzgada (Art. 29 LMASC)."
+      }
+    ];
+
+    const DAM_CHECKLIST_ITEMS = [
+      { id: "bienvenida", label: "1. Bienvenida cordial y felicitación por elegir mediación", pattern: /bienvenid|felicit|tarde|d[ií]as/i },
+      { id: "presentacion", label: "2. Me presento (nombre y rol ante la institución)", pattern: /nombre|soy|mediador|facilitador/i },
+      { id: "imparcialidad", label: "3. Reafirmo mi Imparcialidad (en proceso y resultado)", pattern: /imparcial|neutral|favoritismo|juzgar/i },
+      { id: "proceso", label: "4. Describo el proceso (voluntario y autodeterminación)", pattern: /voluntari|libre|obligad|autodeterminaci/i },
+      { id: "rol", label: "5. Describo mi rol (puente de comunicación, no juez)", pattern: /puente|comunicaci[oó]n|no soy juez|no decido/i },
+      { id: "confidencialidad", label: "6. Alcance de la confidencialidad", pattern: /confidencial|privad|secreto/i },
+      { id: "notas", label: "7. Aviso de toma de notas y su destrucción al final", pattern: /nota|apunte|destru|romp/i },
+      { id: "privadas", label: "8. Adelanto la posibilidad de sesiones privadas (caucus)", pattern: /privada|individual|caucus|por separado/i },
+      { id: "convivencia", label: "9. Reglas de convivencia (respeto y turnos de habla)", pattern: /respeto|turno|interrump|agresi/i },
+      { id: "logistica", label: "10. Logística, agenda y rotafolio", pattern: /rotafolio|agenda|tiempo|puntos/i },
+      { id: "preguntas", label: "11. Preguntas y firma de convenio de confidencialidad", pattern: /pregunta|duda|firm|convenio de confidencialidad/i }
+    ];
+
+    /* ==========================================================================
+       2. PRESET VALIDATION CASE: LUPITA Y ANDREA
+       ========================================================================== */
+
+    const LUPITA_ANDREA_RAW_TEXT = `Una madre fallece y deja un testamento en el que dispone que su hija Lupita herede la casa en la que vivió con ella, así como el menaje y los bienes que se encuentran en su interior, incluido un piano familiar. Lupita es soltera, no tiene hijos y trabajó como maestra de primaria. Durante muchos años vivió con su madre y compartió con ella su vida cotidiana.
+Andrea, su hermana, es directora de una empresa, está casada y tiene familia. A lo largo de los años apoyó económicamente a su madre con el mantenimiento de la casa, el pago de recibos y otros gastos, pues consideraba que Lupita no tenía ingresos suficientes para hacerse cargo de todo.
+La música también forma parte de la historia familiar: Andrea toca el piano, su madre cantaba y Lupita acompañaba con los coros.
+Tras el fallecimiento de su madre y la lectura del testamento, Andrea descubre que Lupita recibirá la casa y los bienes que contiene. Se siente lastimada, se enoja y rompe la comunicación con su hermana.
+Lupita, por su parte, se enfrenta a una situación económica complicada. Aunque no desea desprenderse de la casa, contempla vender el piano para obtener recursos y considera que, si no encuentra otra alternativa, podría verse obligada a vender la propiedad.`;
+
+    /* ==========================================================================
+       3. CLIENT-SIDE DYNAMIC CASE PARSER ENGINE (HEURISTIC NLP)
+       ========================================================================== */
+
+    class CaseParserEngine {
+      static parse(text) {
+        const clean = text.trim();
+        const isLupitaAndrea = /lupita/i.test(clean) && /andrea/i.test(clean);
+
+        if (isLupitaAndrea) {
+          return {
+            title: "Lupita y Andrea (Herencia, Casa y Piano Familiar)",
+            rawText: clean,
+            tag: "Sucesorio / Familiar",
+            summary: "Conflicto entre dos hermanas tras la muerte de la madre por la titularidad de la casa y un piano familiar, con trasfondo de apoyo económico histórico y memorias musicales.",
+            party1: {
+              name: "Lupita",
+              role: "Hija y heredera testamentaria / Maestra",
+              situation: "Vivió y cuidó a la madre cotidianamente; soltera, ingresos bajos de maestra jubilada/activa.",
+              position: "Tiene el derecho legal del testamento sobre la casa y el piano; contempla vender el piano o la casa para subsistir.",
+              interest: "Seguridad habitacional y estabilidad económica; aliviar su angustia financiera sin romper el lazo afectivo con Andrea."
+            },
+            party2: {
+              name: "Andrea",
+              role: "Hija y hermana / Directora de empresa",
+              situation: "Apoyó económicamente a la madre con recibos y mantenimiento; casada, pianista aficionada.",
+              position: "Enojada y lastimada por la exclusión testamentaria; rompió la comunicación al considerar que no se valoró su esfuerzo.",
+              interest: "Reconocimiento a sus aportaciones; preservar el piano familiar con el que compartían música con su madre; equidad en el trato materno."
+            },
+            coreConflict: "Tensión entre la validez legal del testamento a favor de Lupita y la legitimidad moral/financiera de Andrea por su sostenimiento económico del hogar materno y apego al piano.",
+            harvardGuidance: "Posición: 'El testamento me dejó todo' vs 'Yo pagué todo y toco el piano'. Interés común: Honrar la memoria de la madre, preservar el piano en la familia y garantizar que Lupita no quede en la desprotección.",
+            
+            // Phase dialogue generation
+            phasesDialogue: [
+              {
+                phaseId: 1,
+                narrative: "Lupita y Andrea asisten a la sesión inicial en el Centro de Mediación. Llevan meses sin hablarse. Andrea entra con los brazos cruzados y mirada evasiva; Lupita luce cabizbaja y angustiada.",
+                p1Quote: "Vengo porque quiero que esto se resuelva, pero no puedo renunciar a lo único que mi mamá me dejó para vivir.",
+                p2Quote: "Yo no vengo a pelear centavos, vengo a entender por qué mamá y Lupita me borraron de esa casa después de todo lo que aporté.",
+                mediatorDilemma: "¿Cómo debe estructurar el mediador el Discurso de Apertura (DAM) para generar un espacio seguro y neutral?",
+                options: [
+                  {
+                    letter: "A",
+                    text: "Decirle a Andrea que el testamento es legalmente intocable según el código civil y que deben enfocarse únicamente en quién se queda el piano.",
+                    approved: false,
+                    feedback: "❌ RECHAZADO POR EL ÁRBITRO: El mediador vulnera la neutralidad y actúa como juez civil. Deslegitima los sentimientos de Andrea antes del encuadre procesal.",
+                    cite: "Violación al principio de Neutralidad y funciones del DAM (Lámina 127)."
+                  },
+                  {
+                    letter: "B",
+                    text: "Dar la bienvenida cordial, reconocer el valor de ambas por asistir voluntariamente a pesar del duelo reciente, reafirmar su imparcialidad y explicar que el proceso es flexible, confidencial y orientado a que ambas decidan su futuro.",
+                    approved: true,
+                    feedback: "✅ ACREDITADO POR EL ÁRBITRO: Encuadre canónico de la Fase 1 (DAM). Valida la asistencia, establece los principios de voluntariedad y confidencialidad sin emitir juicio alguno sobre el testamento.",
+                    cite: "Conforme a la Lámina 127 (Encuadre, Imparcialidad y Autodeterminación)."
+                  },
+                  {
+                    letter: "C",
+                    text: "Pedirles que firmen de inmediato un acta donde acuerden repartir la casa al 50% para no perder tiempo.",
+                    approved: false,
+                    feedback: "❌ RECHAZADO POR EL ÁRBITRO: Error gravísimo. La mediación no es imposición ni juicio arbitral. Se salta el encuadre y viola la autodeterminación.",
+                    cite: "Fase 1: El mediador no propone acuerdos en el Discurso de Apertura."
+                  }
+                ]
+              },
+              {
+                phaseId: 2,
+                narrative: "En la recolección de información, Andrea estalla emocionalmente: '¡Lupita es una egoísta! Mientras yo pagaba el predial, la luz y las reparaciones de la casa, ella se acomodaba. ¡Y ahora se atreve a amenazar con vender el piano con el que crecimos!'.",
+                p1Quote: "¡No es egoísmo, Andrea! ¡Apenas me alcanza para comer y pagar medicamentos! Si vendo el piano es por pura desesperación.",
+                p2Quote: "¡Ese piano era de mamá y soy yo quien lo toca! ¡Venderlo a extraños es una traición!",
+                mediatorDilemma: "¿Cómo aplica el facilitador la traducción desapasionada (parafraseo) ante la queja de Andrea?",
+                options: [
+                  {
+                    letter: "A",
+                    text: "Parafrasear diciendo: 'Andrea, si he comprendido bien, para ti es vital que se reconozca el apoyo económico que brindaste con cariño a tu madre y deseas proteger ese piano como un tesoro de la historia musical familiar'.",
+                    approved: true,
+                    feedback: "✅ ACREDITADO POR EL ÁRBITRO: Traducción desapasionada impecable. Filtra los ataques ('egoísta', 'se acomodaba') y rescata las necesidades de fondo: reconocimiento de su aporte y valor afectivo del instrumento.",
+                    cite: "Técnica de Parafraseo: Despojar de carga tóxica y rescatar intereses legítimos."
+                  },
+                  {
+                    letter: "B",
+                    text: "Reprender a Andrea diciéndole que en una sala de mediación está prohibido llamar egoísta a una hermana y amenazarla con suspender la sesión.",
+                    approved: false,
+                    feedback: "❌ RECHAZADO POR EL ÁRBITRO: Error técnico de contención. En la Fase 2 debe permitirse el desahogo emocional y procesarlo con herramientas de comunicación en lugar de censura punitiva.",
+                    cite: "Fase 2: Gestión de la narrativa y contención emocional."
+                  },
+                  {
+                    letter: "C",
+                    text: "Preguntarle a Lupita: '¿Es verdad que usted se aprovechó del dinero de su hermana como ella denuncia?'.",
+                    approved: false,
+                    feedback: "❌ RECHAZADO POR EL ÁRBITRO: Actitud inquisitiva ministerial que dinamita la neutralidad y profundiza la brecha entre hermanas.",
+                    cite: "Violación al principio de Neutralidad e Imparcialidad."
+                  }
+                ]
+              },
+              {
+                phaseId: 3,
+                narrative: "Llega el momento de construir la agenda en el rotafolio. Ambas hermanas reconocen que no quieren destruirse en un juzgado ni perder el contacto, pero están atrapadas en sus exigencias.",
+                p1Quote: "Yo necesito ingresos para pagar los servicios y sobrevivir en la casa.",
+                p2Quote: "Yo no quiero que el piano salga de la familia ni sentir que no significo nada en esa casa.",
+                mediatorDilemma: "¿Cómo redacta el mediador los temas en el rotafolio conforme a la Fase 3?",
+                options: [
+                  {
+                    letter: "A",
+                    text: "Escribir en el rotafolio: 'Tema 1: Compensación económica a Andrea por gastos de la casa' y 'Tema 2: Destino y preservación del piano familiar; alternativas de sostenimiento'.",
+                    approved: true,
+                    feedback: "✅ ACREDITADO POR EL ÁRBITRO: Redacción neutral, prospectiva e integradora. Transforma las quejas en temas de trabajo compartidos.",
+                    cite: "Lámina 94 (Elaboración de la agenda en rotafolio con lenguaje neutral)."
+                  },
+                  {
+                    letter: "B",
+                    text: "Escribir en el rotafolio: 'Tema 1: Negligencia financiera de Lupita' y 'Tema 2: Resentimiento de Andrea por el testamento'.",
+                    approved: false,
+                    feedback: "❌ RECHAZADO POR EL ÁRBITRO: Error fatal de examen. Utilizar lenguaje patologizante o culpabilizador en el rotafolio es causa de reprobación.",
+                    cite: "Error fatal de la Fase 3: Agenda no neutral."
+                  },
+                  {
+                    letter: "C",
+                    text: "No anotar nada y dejar que las hermanas discutan libremente sin estructura.",
+                    approved: false,
+                    feedback: "❌ RECHAZADO POR EL ÁRBITRO: La falta de agenda estructurada provoca la repetición circular del conflicto y pérdida de control procesal.",
+                    cite: "Fase 3: Estructuración obligatoria de la agenda."
+                  }
+                ]
+              },
+              {
+                phaseId: 4,
+                narrative: "En la fase de generación de opciones, el mediador invita a una lluvia de ideas sin juzgar anticipadamente sobre los temas del piano y la economía del hogar.",
+                p1Quote: "Si Andrea pudiera quedarse con el piano en su casa, para mí sería un alivio que no se venda a extraños, pero sigo con la angustia del dinero.",
+                p2Quote: "A mí me encantaría tener el piano en mi sala, mis hijos lo tocarían. Y yo podría comprarlo o compensarte.",
+                mediatorDilemma: "¿Qué intervención debe realizar el mediador para potenciar la generación creativa de opciones?",
+                options: [
+                  {
+                    letter: "A",
+                    text: "Fijar el mediador el precio del piano en $50,000 pesos y obligar a Andrea a transferírselos hoy mismo.",
+                    approved: false,
+                    feedback: "❌ RECHAZADO POR EL ÁRBITRO: El mediador no actúa como valuador ni impone transacciones patrimoniales.",
+                    cite: "Violación al principio de Autodeterminación."
+                  },
+                  {
+                    letter: "B",
+                    text: "Estimular el pensamiento lateral: '¿Qué fórmulas permitirían que Andrea resguarde y toque el piano familiar mientras Lupita obtiene la liquidez o respaldo necesario para sus gastos del hogar?'.",
+                    approved: true,
+                    feedback: "✅ ACREDITADO POR EL ÁRBITRO: Pregunta generativa abierta que fomenta la co-construcción de opciones de ganancia mutua (Modelo Harvard).",
+                    cite: "Fase 4: Lluvia de ideas y preguntas reflexivas generativas."
+                  },
+                  {
+                    letter: "C",
+                    text: "Descartar la idea de trasladar el piano porque las mudanzas son muy caras y complicadas.",
+                    approved: false,
+                    feedback: "❌ RECHAZADO POR EL ÁRBITRO: En la Fase 4 está expresamente prohibido censurar o descartar ideas prematuramente.",
+                    cite: "Regla de oro de la Fase 4: Suspensión del juicio durante la lluvia de ideas."
+                  }
+                ]
+              },
+              {
+                phaseId: 5,
+                narrative: "Fase de evaluación de opciones: Andrea propone adquirir el piano formalmente para colocarlo en su hogar, entregando a Lupita una suma económica que solvente sus deudas, y acordar una contribución para el mantenimiento preventivo de la casa.",
+                p1Quote: "¿Y qué pasaría con las reuniones familiares? ¿Podré visitarte para escuchar el piano?",
+                p2Quote: "Por supuesto, la casa de mis hijos es tu casa. Es lo que mamá siempre hubiera querido.",
+                mediatorDilemma: "¿Cómo actúa el mediador como 'Agente de la Realidad' en la Fase 5?",
+                options: [
+                  {
+                    letter: "A",
+                    text: "Cuestionar con respeto la viabilidad práctica: tiempos de traslado del piano, plazos de la aportación económica y compromisos de mantenimiento para que sea un acuerdo sostenible.",
+                    approved: true,
+                    feedback: "✅ ACREDITADO POR EL ÁRBITRO: Excelente función de Agente de la Realidad. Prueba la solidez operativa del acuerdo sin juzgar la voluntad de las partes.",
+                    cite: "Fase 5: Examen de realidad y criterios objetivos de viabilidad."
+                  },
+                  {
+                    letter: "B",
+                    text: "Decirles que eso parece un trueque barato y que deberían consultar a un despacho mercantil para que hagan una auditoría formal.",
+                    approved: false,
+                    feedback: "❌ RECHAZADO POR EL ÁRBITRO: Descalifica el acuerdo natural de las partes y entorpece la resolución autocompositiva.",
+                    cite: "Violación a la función facilitadora del mediador."
+                  },
+                  {
+                    letter: "C",
+                    text: "Aprobar todo sin revisar montos ni fechas para terminar temprano la jornada.",
+                    approved: false,
+                    feedback: "❌ RECHAZADO POR EL ÁRBITRO: Un acuerdo sin fechas ni obligaciones claras deriva en incumplimiento futuro.",
+                    cite: "Fase 5: Criterios objetivos y certeza de cumplimiento."
+                  }
+                ]
+              },
+              {
+                phaseId: 6,
+                narrative: "Fase de Convenio y Cierre: Las hermanas alcanzan un acuerdo pleno sobre la cesión del piano a Andrea con compensación económica inmediata a Lupita, un pacto de reuniones familiares y respeto total al testamento de la casa.",
+                p1Quote: "Siento que me he quitado un peso enorme de encima y recuperé a mi hermana.",
+                p2Quote: "Gracias por ayudarnos a hablar con el corazón y no con el coraje.",
+                mediatorDilemma: "¿Qué formalidad legal y procesal debe asegurar el mediador para culminar el proceso?",
+                options: [
+                  {
+                    letter: "A",
+                    text: "Darles una copia informal sin firma y decirles que la palabra de hermanas es suficiente en derecho.",
+                    approved: false,
+                    feedback: "❌ RECHAZADO POR EL ÁRBITRO: El convenio de mediación debe reunir las formalidades de ley para adquirir eficacia jurídica.",
+                    cite: "Violación a la certeza jurídica y a la Ley MASC."
+                  },
+                  {
+                    letter: "B",
+                    text: "Redactar el convenio con cláusulas precisas de dar, hacer y no hacer, incluir la cláusula de método alterno para controversias futuras, y remitirlo a sanción y registro ante el Instituto para que tenga autoridad de Cosa Juzgada exigible en Vía de Apremio (Art. 29 LMASC).",
+                    approved: true,
+                    feedback: "✅ ACREDITADO POR EL ÁRBITRO: Cumplimiento perfecto de los requisitos de validez y ejecutabilidad legal del convenio conforme al Art. 29 de la Ley de Mecanismos Alternativos.",
+                    cite: "Art. 29 LMASC y Lámina 164 (Etapa del Acuerdo y Eficacia de Cosa Juzgada)."
+                  },
+                  {
+                    letter: "C",
+                    text: "Exigirles el 10% del valor del piano como comisión de honorarios por el éxito de la mediación judicial.",
+                    approved: false,
+                    feedback: "❌ RECHAZADO POR EL ÁRBITRO: Falta ética y legal gravísima. En mediación pública e institucional los servicios son gratuitos y está prohibido el cobro de comisiones.",
+                    cite: "Código de Ética Judicial y Principio de Honestidad."
+                  }
+                ]
+              }
+            ]
+          };
+        }
+
+        // Generic Heuristic Parsing for ANY Custom Case entered
+        return this.parseGenericConflict(clean);
+      }
+
+      static parseGenericConflict(text) {
+        // Detect proper names or parties
+        const sentences = text.split(/[.\n]+/).map(s => s.trim()).filter(s => s.length > 5);
+        
+        // Find capitalized candidate words
+        const words = text.match(/\b[A-ZÁÉÍÓÚÑ][a-záéíóúñ]+\b/g) || [];
+        const freq = {};
+        const stopWords = new Set(["Una", "Uno", "El", "La", "Los", "Las", "Tras", "Cuando", "Aunque", "Durante", "Por", "Para", "Con", "De", "En", "Pero", "Como", "Este", "Esta", "Ese", "Esa", "Se", "Su", "Sus", "Al"]);
+        
+        words.forEach(w => {
+          if (!stopWords.has(w)) {
+            freq[w] = (freq[w] || 0) + 1;
+          }
+        });
+
+        const sortedCandidates = Object.keys(freq).sort((a, b) => freq[b] - a[a]);
+        const p1Name = sortedCandidates[0] || "Parte Solicitante";
+        const p2Name = sortedCandidates[1] || "Parte Complementaria";
+
+        // Identify key problem theme
+        let themeTag = "Civil / Patrimonial";
+        if (/hered|testament|famil|hij|matrimoni|divorci/i.test(text)) themeTag = "Familiar / Sucesorio";
+        else if (/arrend|inmuebl|rent|casa|inquilin|local/i.test(text)) themeTag = "Arrendamiento / Patrimonial";
+        else if (/vecin|ruid|árbol|árboles|colind/i.test(text)) themeTag = "Comunitario / Vecinal";
+        else if (/socio|negoci|empresa|deuda|pagar/i.test(text)) themeTag = "Mercantil / Societario";
+
+        const summary = sentences.slice(0, 2).join(". ") + ".";
+
+        return {
+          title: `Caso Dinámico: Controversia entre ${p1Name} y ${p2Name}`,
+          rawText: text,
+          tag: themeTag,
+          summary: summary || "Controversia entre partes con intereses contrapuestos en proceso de facilitación.",
+          party1: {
+            name: p1Name,
+            role: "Parte Involucrada A",
+            situation: sentences[0] || "Manifiesta afectación directa y busca solución a sus requerimientos.",
+            position: "Exige el cumplimiento estricto de su pretensión inicial.",
+            interest: "Seguridad, respeto, tranquilidad y solución justa a sus necesidades materiales o emocionales."
+          },
+          party2: {
+            name: p2Name,
+            role: "Parte Involucrada B",
+            situation: sentences[1] || "Defiende su perspectiva y sostiene que sus motivos no han sido comprendidos.",
+            position: "Rechaza someterse a exigencias unilaterales sin contraprestación recíproca.",
+            interest: "Reconocimiento, certidumbre, equidad y preservación de su patrimonio o tranquilidad."
+          },
+          coreConflict: `Conflicto de intereses entre ${p1Name} y ${p2Name} respecto a hechos controvertidos y percepciones mutuas divergentes.`,
+          harvardGuidance: `Desmontar la rigidez de las demandas entre ${p1Name} y ${p2Name} para identificar las necesidades compartidas de tranquilidad, certeza y equidad.`,
+          
+          phasesDialogue: [
+            {
+              phaseId: 1,
+              narrative: `${p1Name} y ${p2Name} se sientan en la mesa de mediación con evidente reserva y distancia. Ambas partes esperan ser escuchadas y temen salir perjudicadas.`,
+              p1Quote: `Acepté venir para que ${p2Name} entienda que esta situación no puede continuar como está.`,
+              p2Quote: `Yo también tengo cosas que decir; no voy a aceptar que se me culpe de todo.`,
+              mediatorDilemma: `¿Cómo debe formular el mediador el Discurso de Apertura (DAM) para garantizar la igualdad y neutralidad ante ${p1Name} y ${p2Name}?`,
+              options: [
+                {
+                  letter: "A",
+                  text: `Informarles de inmediato que uno de los dos debe ceder hoy mismo para no perder el tiempo de la institución.`,
+                  approved: false,
+                  feedback: "❌ RECHAZADO POR EL ÁRBITRO: Presiona indebidamente a las partes y vulnera el principio de voluntariedad y flexibilidad del proceso.",
+                  cite: "Violación al Art. 32 LMASC (Principio de Voluntariedad)."
+                },
+                {
+                  letter: "B",
+                  text: `Brindar la bienvenida cordial, reconocer su disposición a dialogar, asegurar la estricta imparcialidad y confidencialidad, y recordar que el acuerdo solo emanará de su propia voluntad.`,
+                  approved: true,
+                  feedback: "✅ ACREDITADO POR EL ÁRBITRO: Discurso de encuadre técnicamente sólido. Establece las reglas del juego, la neutralidad y la voluntariedad.",
+                  cite: "Lámina 127 del Instituto (Reglas del DAM y Consentimiento Informado)."
+                },
+                {
+                  letter: "C",
+                  text: `Pedirle a ${p1Name} que exponga todas sus pruebas documentales para calificar de inmediato quién tiene la razón.`,
+                  approved: false,
+                  feedback: "❌ RECHAZADO POR EL ÁRBITRO: Confunde la mediación con un juicio contradictorio. El mediador no valora pruebas para emitir un fallo.",
+                  cite: "Error procesal grave de rol (La mediación no es un juicio de pruebas)."
+                }
+              ]
+            },
+            {
+              phaseId: 2,
+              narrative: `En la fase de recolección, una de las partes expresa descontento emocional intenso y reprocha conductas pasadas de la otra parte.`,
+              p1Quote: `¡Siempre actúa con cerrazón y desinterés! ¡Es imposible hablar razonablemente con alguien así!`,
+              p2Quote: `¡Mira quién habla de cerrazón! ¡Tú empezaste atacándome y buscando problemas!`,
+              mediatorDilemma: `¿Qué intervención del mediador aplica con rigor la traducción desapasionada (parafraseo)?`,
+              options: [
+                {
+                  letter: "A",
+                  text: `Parafrasear diciendo: 'Si comprendo bien, para usted es prioritario contar con apertura en el diálogo y encontrar canales de comunicación constructivos y claros sobre este asunto'.`,
+                  approved: true,
+                  feedback: "✅ ACREDITADO POR EL ÁRBITRO: Traducción desapasionada impecable. Filtra las acusaciones mutuas y rescata la necesidad de fondo: claridad y apertura en la comunicación.",
+                  cite: "Técnica de Parafraseo Desapasionado (Presentación 30/09)."
+                },
+                {
+                  letter: "B",
+                  text: `Decirles que ambos están actuando de forma inmadura y que no tolerará berrinches en su sala.`,
+                  approved: false,
+                  feedback: "❌ RECHAZADO POR EL ÁRBITRO: El facilitador no juzga ni amonesta moralmente a los usuarios. Destruye el clima de confianza.",
+                  cite: "Violación al rol empático y neutral del facilitador."
+                },
+                {
+                  letter: "C",
+                  text: `Repetir los insultos de ambos para demostrarles lo mal que se escuchan.`,
+                  approved: false,
+                  feedback: "❌ RECHAZADO POR EL ÁRBITRO: Error gravísimo. Repetir agresiones verbales escala el conflicto en lugar de desescalarlo.",
+                  cite: "Técnica de Parafraseo: Prohibición de replicar adjetivos peyorativos."
+                }
+              ]
+            },
+            {
+              phaseId: 3,
+              narrative: `Tras desahogar los hechos, el mediador guía a las partes hacia el rotafolio para estructurar la agenda de trabajo.`,
+              p1Quote: `Queremos saber en concreto qué se va a revisar para no perdernos en discusiones inútiles.`,
+              p2Quote: `De acuerdo, pero que los temas no se redacten como si yo fuera el culpable.`,
+              mediatorDilemma: `¿Cómo redacta el facilitador los temas en el rotafolio para respetar la neutralidad de la Fase 3?`,
+              options: [
+                {
+                  letter: "A",
+                  text: `Escribir los puntos en términos de temas neutrales y objetivos (ej. '1. Mecanismos de comunicación y convivencia' y '2. Cumplimiento de compromisos mutuos').`,
+                  approved: true,
+                  feedback: "✅ ACREDITADO POR EL ÁRBITRO: Cumple el estándar de la Fase 3: la agenda se titula de manera neutral orientada a la solución futura.",
+                  cite: "Lámina 94 (Identificación de temas y agenda en rotafolio)."
+                },
+                {
+                  letter: "B",
+                  text: `Anotar literalmente las acusaciones de cada uno para que quede constancia escrita de quién empezó.`,
+                  approved: false,
+                  feedback: "❌ RECHAZADO POR EL ÁRBITRO: La agenda no es acta acusatoria. Debe redactarse sin sesgo ni atribución de faltas.",
+                  cite: "Error fatal de la Fase 3: Titulación acusatoria de la agenda."
+                },
+                {
+                  letter: "C",
+                  text: `Delegar la redacción a los abogados de las partes sin supervisión del mediador.`,
+                  approved: false,
+                  feedback: "❌ RECHAZADO POR EL ÁRBITRO: La construcción de la agenda es una responsabilidad metodológica del facilitador junto con los mediados.",
+                  cite: "Metodología del Instituto de Mecanismos Alternativos."
+                }
+              ]
+            },
+            {
+              phaseId: 4,
+              narrative: `Se apertura la lluvia de ideas para generar opciones viables entre ${p1Name} y ${p2Name}.`,
+              p1Quote: `Estaría dispuesto a flexibilizar mis tiempos si veo un compromiso real del otro lado.`,
+              p2Quote: `Yo también puedo aportar alternativas si se respeta mi tranquilidad y esfuerzo.`,
+              mediatorDilemma: `¿Cómo debe conducir el facilitador la generación de opciones?`,
+              options: [
+                {
+                  letter: "A",
+                  text: `Imponer de inmediato su propuesta personal y presionar a las partes para que la acepten.`,
+                  approved: false,
+                  feedback: "❌ RECHAZADO POR EL ÁRBITRO: El mediador no impone fórmulas de solución. Viola la autodeterminación.",
+                  cite: "Principio de Autodeterminación de las partes."
+                },
+                {
+                  letter: "B",
+                  text: `Invitar a proponer alternativas sin juzgarlas anticipadamente, estimulando opciones donde ambas partes perciban un beneficio equitativo.`,
+                  approved: true,
+                  feedback: "✅ ACREDITADO POR EL ÁRBITRO: Aplicación canónica de la Fase 4: suspensión del juicio y estímulo al pensamiento lateral autocompositivo.",
+                  cite: "Fase 4: Lluvia de ideas y exploración de opciones de ganancia mutua."
+                },
+                {
+                  letter: "C",
+                  text: `Descartar cualquier idea que no sea estrictamente monetaria.`,
+                  approved: false,
+                  feedback: "❌ RECHAZADO POR EL ÁRBITRO: En mediación las opciones pueden ser afectivas, de conducta, temporales o materiales.",
+                  cite: "Flexibilidad y creatividad en los MASC."
+                }
+              ]
+            },
+            {
+              phaseId: 5,
+              narrative: `Fase de evaluación de opciones: Se analizan las propuestas sobre la mesa frente a la realidad operativa.`,
+              p1Quote: `Me parece una propuesta viable, pero quiero estar seguro de que se pueda cumplir en las fechas pactadas.`,
+              p2Quote: `Es razonable, siempre que las obligaciones queden bien delimitadas y no haya malentendidos.`,
+              mediatorDilemma: `¿Cuál es el rol del facilitador como Agente de la Realidad en esta fase?`,
+              options: [
+                {
+                  letter: "A",
+                  text: `Cuestionar constructivamente mediante preguntas reflexivas: '¿Qué requerirían para que este compromiso se cumpla sin contratiempos?' evaluando la viabilidad práctica.`,
+                  approved: true,
+                  feedback: "✅ ACREDITADO POR EL ÁRBITRO: Función óptima del Agente de la Realidad: verifica la sostenibilidad y cumplimiento futuro del acuerdo sin perder la imparcialidad.",
+                  cite: "Fase 5: Examen de realidad y criterios objetivos."
+                },
+                {
+                  letter: "B",
+                  text: `Fijar multas penales si alguna de las partes no cumple en el plazo.`,
+                  approved: false,
+                  feedback: "❌ RECHAZADO POR EL ÁRBITRO: El facilitador carece de facultades punitivas o jurisdiccionales de sanción penal.",
+                  cite: "Límites competenciales de los facilitadores MASC."
+                },
+                {
+                  letter: "C",
+                  text: `Aprobar el acuerdo sin revisar detalles ni calendarios de ejecución.`,
+                  approved: false,
+                  feedback: "❌ RECHAZADO POR EL ÁRBITRO: Los acuerdos vagos o carentes de precisión temporal fracasan en la práctica.",
+                  cite: "Fase 5: Criterio objetivo de certeza jurídica."
+                }
+              ]
+            },
+            {
+              phaseId: 6,
+              narrative: `Fase final de Acuerdo: ${p1Name} y ${p2Name} logran un consenso integral y solicitan plasmarlo en el convenio final.`,
+              p1Quote: `Me siento satisfecho de haber resuelto esto con respeto.`,
+              p2Quote: `Coincido, agradezco que hayamos tenido este espacio para escucharnos.`,
+              mediatorDilemma: `¿Qué formalidad legal asegura la plena eficacia jurídica del convenio resultante?`,
+              options: [
+                {
+                  letter: "A",
+                  text: `Entregarles una minuta simple sin firmas institucionales.`,
+                  approved: false,
+                  feedback: "❌ RECHAZADO POR EL ÁRBITRO: Carece de certeza jurídica y no adquiere fuerza ejecutiva.",
+                  cite: "Requisitos de validez de la Ley MASC."
+                },
+                {
+                  letter: "B",
+                  text: `Formalizar el convenio por escrito con cláusulas precisas de dar, hacer o no hacer, incluir la cláusula MASC para conflictos futuros y someterlo a sanción y registro ante el Instituto para que surta eficacia de Cosa Juzgada exigible en Vía de Apremio (Art. 29 LMASC).`,
+                  approved: true,
+                  feedback: "✅ ACREDITADO POR EL ÁRBITRO: Plena observancia del Art. 29 de la Ley de Mecanismos Alternativos: eficacia de sentencia ejecutoriada (cosa juzgada).",
+                  cite: "Art. 29 LMASC y Lámina 164 (Etapa del Acuerdo)."
+                },
+                {
+                  letter: "C",
+                  text: `Aconsejarles que ignoren el convenio y acudan a un juicio civil para mayor seguridad.`,
+                  approved: false,
+                  feedback: "❌ RECHAZADO POR EL ÁRBITRO: Falsedad dogmática grave. Los convenios de mediación sancionados tienen idéntica fuerza que una sentencia ejecutoriada.",
+                  cite: "Eficacia ejecutiva de los convenios en MASC."
+                }
+              ]
+            }
+          ]
+        };
+      }
+    }
+
+    /* ==========================================================================
+       4. STATE MANAGEMENT & LOCAL STORAGE
+       ========================================================================== */
+
+    const STORAGE_KEY = "masc_dynamic_simulator_v2";
+
+    let state = {
+      streakDays: 1,
+      lastActiveDate: new Date().toISOString().split("T")[0],
+      activeTab: "cases",
+      selectedPhaseId: 1,
+      currentSimPhaseIndex: 0,
+      activeCase: null,
+      completedSimPhases: {},
+      quizAnswers: {},
+      damChecklistState: {},
+      historyLog: []
+    };
+
+    function loadState() {
+      try {
+        const saved = localStorage.getItem(STORAGE_KEY);
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          state = { ...state, ...parsed };
+        }
+      } catch (e) {
+        console.warn("Error cargando estado:", e);
+      }
+
+      // If no active case, initialize with the benchmark Lupita & Andrea preset
+      if (!state.activeCase) {
+        state.activeCase = CaseParserEngine.parse(LUPITA_ANDREA_RAW_TEXT);
+      }
+      updateUI();
+    }
+
+    function saveState() {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      } catch (e) {
+        console.warn("Error guardando estado:", e);
+      }
+      updateUI();
+    }
+
+    function resetProgress() {
+      if (confirm("¿Deseas reiniciar tu avance y estadísticas acumuladas?")) {
+        localStorage.removeItem(STORAGE_KEY);
+        state = {
+          streakDays: 1,
+          lastActiveDate: new Date().toISOString().split("T")[0],
+          activeTab: "cases",
+          selectedPhaseId: 1,
+          currentSimPhaseIndex: 0,
+          activeCase: CaseParserEngine.parse(LUPITA_ANDREA_RAW_TEXT),
+          completedSimPhases: {},
+          quizAnswers: {},
+          damChecklistState: {},
+          historyLog: []
+        };
+        saveState();
+        location.reload();
+      }
+    }
+
+    function calculateReadinessIndex() {
+      // 1. Dynamic Simulation: 6 phases = 35%
+      const totalPhases = 6;
+      const approvedPhases = Object.values(state.completedSimPhases).filter(Boolean).length;
+      const simPart = (approvedPhases / totalPhases) * 35;
+
+      // 2. Quiz: 6 questions = 45%
+      let correctQuiz = 0;
+      QUIZ_QUESTIONS.forEach(q => {
+        const userAns = state.quizAnswers[q.id];
+        if (userAns !== undefined && q.options[userAns]?.correct) correctQuiz++;
+      });
+      const quizPart = (correctQuiz / QUIZ_QUESTIONS.length) * 45;
+
+      // 3. DAM Checklist: 11 items = 20%
+      const checkedDam = Object.values(state.damChecklistState).filter(Boolean).length;
+      const damPart = (checkedDam / DAM_CHECKLIST_ITEMS.length) * 20;
+
+      return Math.min(100, Math.max(0, Math.round(simPart + quizPart + damPart)));
+    }
+
+    function logHistory(module, action, status) {
+      const entry = {
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        date: new Date().toLocaleDateString(),
+        module,
+        action,
+        status
+      };
+      state.historyLog.unshift(entry);
+      if (state.historyLog.length > 30) state.historyLog.pop();
+      saveState();
+    }
+
+    /* ==========================================================================
+       5. DYNAMIC CASE CONTROLLER & UI RENDERING
+       ========================================================================== */
+
+    function loadLupitaAndreaPreset() {
+      state.activeCase = CaseParserEngine.parse(LUPITA_ANDREA_RAW_TEXT);
+      state.currentSimPhaseIndex = 0;
+      state.completedSimPhases = {};
+      saveState();
+      renderActiveCase();
+      alert("✅ Caso de Lupita y Andrea cargado exitosamente en la Mesa de Diálogo.");
+    }
+
+    function openCustomCaseModal() {
+      document.getElementById("customCaseModal").classList.add("open");
+    }
+
+    function closeCustomCaseModal() {
+      document.getElementById("customCaseModal").classList.remove("open");
+    }
+
+    function loadLupitaAndreaInModal() {
+      document.getElementById("customCaseInput").value = LUPITA_ANDREA_RAW_TEXT;
+    }
+
+    function processAndLoadCustomCase() {
+      const text = document.getElementById("customCaseInput").value.trim();
+      if (!text || text.length < 30) {
+        alert("Por favor ingresa un texto más completo sobre el conflicto para que el analizador pueda extraer a las partes.");
+        return;
+      }
+
+      state.activeCase = CaseParserEngine.parse(text);
+      state.currentSimPhaseIndex = 0;
+      state.completedSimPhases = {};
+      saveState();
+      closeCustomCaseModal();
+      renderActiveCase();
+      alert(`✅ Caso analizado y cargado exitosamente: "${state.activeCase.title}"`);
+    }
+
+    function renderActiveCase() {
+      if (!state.activeCase) return;
+
+      const c = state.activeCase;
+
+      // Title & Dossier Header
+      document.getElementById("currentCaseTitle").textContent = c.title;
+      document.getElementById("dossierTag").textContent = c.tag;
+      document.getElementById("dossierSummary").textContent = c.summary;
+      document.getElementById("harvardGuidance").textContent = c.harvardGuidance;
+
+      // Party 1 Card
+      document.getElementById("nameP1").textContent = c.party1.name;
+      document.getElementById("roleP1").textContent = c.party1.role;
+      document.getElementById("sitP1").textContent = c.party1.situation;
+      document.getElementById("posP1").textContent = c.party1.position;
+      document.getElementById("intP1").textContent = c.party1.interest;
+      document.getElementById("avatarP1").textContent = c.party1.name.slice(0, 2).toUpperCase();
+
+      // Party 2 Card
+      document.getElementById("nameP2").textContent = c.party2.name;
+      document.getElementById("roleP2").textContent = c.party2.role;
+      document.getElementById("sitP2").textContent = c.party2.situation;
+      document.getElementById("posP2").textContent = c.party2.position;
+      document.getElementById("intP2").textContent = c.party2.interest;
+      document.getElementById("avatarP2").textContent = c.party2.name.slice(0, 2).toUpperCase();
+
+      // Render Active Phase in the Table
+      renderCurrentSimPhase();
+
+      // Render Paraphrase Prompt scenario in Tab 3
+      const paraBox = document.getElementById("paraphrasePromptScenario");
+      if (paraBox) {
+        paraBox.innerHTML = `
+          <strong>Declaración de ${c.party2.name} para traducir desapasionadamente:</strong><br>
+          <em>"¡${c.party1.name} es una aprovechada y egoísta! Mientras yo aportaba y pagaba todo, ella se acomodaba y ahora amenaza con despojarme de los recuerdos familiares."</em>
+        `;
+      }
+    }
+
+    function renderCurrentSimPhase() {
+      const c = state.activeCase;
+      const phaseIdx = state.currentSimPhaseIndex;
+      const phaseData = c.phasesDialogue[phaseIdx];
+
+      // Stepper header
+      document.getElementById("simPhaseBadge").textContent = `Fase ${phaseIdx + 1} de 6`;
+      document.getElementById("simPhaseTitle").textContent = `${MASC_PHASES[phaseIdx].name}`;
+
+      document.getElementById("btnPrevPhase").disabled = (phaseIdx === 0);
+      document.getElementById("btnNextPhase").disabled = (phaseIdx === 5);
+
+      // Dialogue Feed
+      const feed = document.getElementById("simDialogueFeed");
+      feed.innerHTML = `
+        <div class="speech-bubble narrator">
+          <div style="font-size:1.2rem;">🏛️</div>
+          <div>
+            <div class="bubble-author">Contexto de la Fase Procesal</div>
+            <div class="bubble-text">${phaseData.narrative}</div>
+          </div>
+        </div>
+
+        <div class="speech-bubble party1">
+          <div class="party-avatar" style="width:28px;height:28px;font-size:0.75rem;">${c.party1.name.slice(0,2).toUpperCase()}</div>
+          <div>
+            <div class="bubble-author">${c.party1.name} (${c.party1.role})</div>
+            <div class="bubble-text">"${phaseData.p1Quote}"</div>
+          </div>
+        </div>
+
+        <div class="speech-bubble party2">
+          <div class="party-avatar p2" style="width:28px;height:28px;font-size:0.75rem;">${c.party2.name.slice(0,2).toUpperCase()}</div>
+          <div>
+            <div class="bubble-author">${c.party2.name} (${c.party2.role})</div>
+            <div class="bubble-text">"${phaseData.p2Quote}"</div>
+          </div>
+        </div>
+      `;
+
+      // Mediator Dilemma & Options
+      document.getElementById("mediatorPromptTitle").textContent = `⚖️ Decisión del Mediador: ${phaseData.mediatorDilemma}`;
+      
+      const optContainer = document.getElementById("simOptionsContainer");
+      const isPhaseDone = state.completedSimPhases[phaseIdx] !== undefined;
+
+      optContainer.innerHTML = phaseData.options.map((opt, i) => `
+        <button class="option-btn" id="simOptBtn_${i}" onclick="selectSimOption(${i})">
+          <span class="option-letter">${opt.letter}</span>
+          <span>${opt.text}</span>
+        </button>
+      `).join("");
+
+      // Hide or reset arbiter card
+      const arbCard = document.getElementById("simArbiterCard");
+      arbCard.className = "arbiter-card";
+    }
+
+    function selectSimOption(optIdx) {
+      const c = state.activeCase;
+      const phaseIdx = state.currentSimPhaseIndex;
+      const phaseData = c.phasesDialogue[phaseIdx];
+      const opt = phaseData.options[optIdx];
+
+      // Paint buttons
+      phaseData.options.forEach((o, i) => {
+        const btn = document.getElementById("simOptBtn_" + i);
+        if (btn) {
+          btn.disabled = true;
+          if (i === optIdx) {
+            btn.classList.add(opt.approved ? "selected-correct" : "selected-incorrect");
+          }
+        }
+      });
+
+      // Arbiter Card
+      const arbCard = document.getElementById("simArbiterCard");
+      const statusHeader = document.getElementById("simArbiterStatus");
+      const feedbackDiv = document.getElementById("simArbiterFeedback");
+      const citeDiv = document.getElementById("simArbiterCite");
+
+      arbCard.className = "arbiter-card active " + (opt.approved ? "approved" : "rejected");
+      statusHeader.innerHTML = opt.approved
+        ? "<span>🛡️ DICTAMEN DEL ÁRBITRO: ACREDITADO PARA EXAMEN</span>"
+        : "<span>🛡️ DICTAMEN DEL ÁRBITRO: INSUFICIENTE / RECHAZADO</span>";
+      feedbackDiv.textContent = opt.feedback;
+      citeDiv.textContent = opt.cite;
+
+      if (opt.approved) {
+        state.completedSimPhases[phaseIdx] = true;
+        logHistory("Simulador Dinámico", `${c.title} — Fase ${phaseIdx + 1}`, "ACREDITADO");
+      } else {
+        logHistory("Simulador Dinámico", `${c.title} — Fase ${phaseIdx + 1}`, "RECHAZADO");
+      }
+
+      saveState();
+    }
+
+    function nextSimPhase() {
+      if (state.currentSimPhaseIndex < 5) {
+        state.currentSimPhaseIndex++;
+        saveState();
+        renderCurrentSimPhase();
+      }
+    }
+
+    function prevSimPhase() {
+      if (state.currentSimPhaseIndex > 0) {
+        state.currentSimPhaseIndex--;
+        saveState();
+        renderCurrentSimPhase();
+      }
+    }
+
+    /* ==========================================================================
+       6. TAB 2: MAP OF 6 PHASES (INSTITUTE)
+       ========================================================================== */
+
+    function renderPhasesTimeline() {
+      const container = document.getElementById("timelineContainer");
+      if (!container) return;
+
+      container.innerHTML = MASC_PHASES.map(phase => `
+        <div class="step-card ${phase.id === state.selectedPhaseId ? 'active-step' : ''}" onclick="selectPhase(${phase.id})">
+          <div class="step-num">${phase.id}</div>
+          <div class="step-name">${phase.short}</div>
+        </div>
+      `).join("");
+
+      renderPhaseDetail(state.selectedPhaseId);
+    }
+
+    function selectPhase(id) {
+      state.selectedPhaseId = id;
+      renderPhasesTimeline();
+      saveState();
+    }
+
+    function renderPhaseDetail(id) {
+      const phase = MASC_PHASES.find(p => p.id === id) || MASC_PHASES[0];
+      const box = document.getElementById("stepDetailView");
+      if (!box) return;
+
+      box.innerHTML = `
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
+          <h3 style="font-size: 1.15rem; font-weight: 800; color: #93c5fd;">${phase.name}</h3>
+          <span class="tag-badge">Fase Procesal ${phase.id}</span>
+        </div>
+        <p style="font-size: 0.95rem; color: #e2e8f0; line-height: 1.4;">${phase.objective}</p>
+
+        <div class="detail-grid">
+          <div class="detail-item">
+            <h4>⚖️ Principios Rectores</h4>
+            <p>${phase.principles.map(p => `<strong>${p}</strong>`).join(" · ")}</p>
+          </div>
+          <div class="detail-item">
+            <h4>🎭 Rol del Mediador</h4>
+            <p>${phase.role}</p>
+          </div>
+          <div class="detail-item">
+            <h4>🛠️ Herramientas Clave</h4>
+            <ul>${phase.tools.map(t => `<li>${t}</li>`).join("")}</ul>
+          </div>
+        </div>
+
+        <div class="alert-fatal">
+          <strong>⚠️ Errores Fatales en Examen de Certificación:</strong><br>
+          ${phase.fatalErrors}
+        </div>
+      `;
+    }
+
+    /* ==========================================================================
+       7. TAB 3: DAM CHECKLIST & PARAPHRASE TRAINER
+       ========================================================================== */
+
+    function renderDamChecklist() {
+      const grid = document.getElementById("damChecklistGrid");
+      if (!grid) return;
+
+      grid.innerHTML = DAM_CHECKLIST_ITEMS.map(item => `
+        <label class="checklist-item ${state.damChecklistState[item.id] ? 'checked' : ''}" id="checkLabel_${item.id}">
+          <input type="checkbox" id="check_${item.id}" ${state.damChecklistState[item.id] ? 'checked' : ''} onchange="toggleDamCheck('${item.id}', this.checked)">
+          <span>${item.label}</span>
+        </label>
+      `).join("");
+    }
+
+    function toggleDamCheck(id, isChecked) {
+      state.damChecklistState[id] = isChecked;
+      const label = document.getElementById("checkLabel_" + id);
+      if (label) {
+        if (isChecked) label.classList.add("checked");
+        else label.classList.remove("checked");
+      }
+      saveState();
+    }
+
+    function analyzeDamText() {
+      const text = document.getElementById("damTextInput").value.trim();
+      const arbiterCard = document.getElementById("damArbiterCard");
+      const statusHeader = document.getElementById("damArbiterStatus");
+      const feedbackDiv = document.getElementById("damArbiterFeedback");
+
+      if (!text || text.length < 25) {
+        alert("Por favor escribe una simulación de Discurso de Apertura más detallada para auditar.");
+        return;
+      }
+
+      let detectedCount = 0;
+      let missingItems = [];
+
+      DAM_CHECKLIST_ITEMS.forEach(item => {
+        const found = item.pattern.test(text);
+        state.damChecklistState[item.id] = found;
+        const cb = document.getElementById("check_" + item.id);
+        const lbl = document.getElementById("checkLabel_" + item.id);
+        if (cb) cb.checked = found;
+        if (lbl) {
+          if (found) lbl.classList.add("checked");
+          else lbl.classList.remove("checked");
+        }
+        if (found) detectedCount++;
+        else missingItems.push(item.label);
+      });
+
+      arbiterCard.className = "arbiter-card active " + (detectedCount >= 9 ? "approved" : "rejected");
+      if (detectedCount >= 9) {
+        statusHeader.innerHTML = `🛡️ DICTAMEN: ACREDITADO (${detectedCount}/11 elementos detectados)`;
+        feedbackDiv.innerHTML = `¡Excelente estructura de Discurso de Apertura! Has cubierto los estándares canónicos del Instituto. ${missingItems.length > 0 ? `<br><small style="color:var(--text-muted)">Componentes menores a reforzar: ${missingItems.join(" · ")}</small>` : ''}`;
+        logHistory("Taller DAM", "Auditoría de Discurso", "ACREDITADO");
+      } else {
+        statusHeader.innerHTML = `🛡️ DICTAMEN: INSUFICIENTE PARA EXAMEN (${detectedCount}/11 elementos detectados)`;
+        feedbackDiv.innerHTML = `El discurso omitió elementos críticos según la Lámina 127 del Instituto:<br><strong style="color:#fca5a5;">${missingItems.join("<br>")}</strong><br><small>Recuerda mencionar que las notas se destruyen, el uso de sesiones privadas y la voluntariedad.</small>`;
+        logHistory("Taller DAM", "Auditoría de Discurso", "RECHAZADO");
+      }
+
+      saveState();
+    }
+
+    function auditParaphrase() {
+      const input = document.getElementById("paraphraseInput").value.trim().toLowerCase();
+      const card = document.getElementById("paraphraseArbiterCard");
+      const status = document.getElementById("paraphraseArbiterStatus");
+      const feedback = document.getElementById("paraphraseArbiterFeedback");
+
+      if (input.length < 20) {
+        alert("Escribe una propuesta de parafraseo más completa para auditar.");
+        return;
+      }
+
+      const toxicWords = ["mentiroso", "sinvergüenza", "burla", "usurero", "tramposo", "robar", "malo", "aprovechada", "egoísta"];
+      const hasToxic = toxicWords.some(w => input.includes(w));
+      const hasPositiveNeeds = input.includes("necesita") || input.includes("importante") || input.includes("certeza") || input.includes("claridad") || input.includes("cumplimiento") || input.includes("resguardo") || input.includes("reconocimiento");
+
+      card.className = "arbiter-card active " + (!hasToxic && hasPositiveNeeds ? "approved" : "rejected");
+      if (!hasToxic && hasPositiveNeeds) {
+        status.innerHTML = "🛡️ DICTAMEN: TRADUCCIÓN DESAPASIONADA ACREDITADA";
+        feedback.innerHTML = "Has eliminado exitosamente las descalificaciones personales y rescatado las necesidades sustantivas de fondo. Conforme a la técnica del 30/09.";
+        logHistory("Taller Parafraseo", "Traducción Desapasionada", "ACREDITADO");
+      } else if (hasToxic) {
+        status.innerHTML = "🛡️ DICTAMEN: RECHAZADO POR CONSERVAR LENGUAJE TÓXICO";
+        feedback.innerHTML = "Tu parafraseo conserva términos peyorativos o acusatorios. En mediación, el facilitador debe neutralizar los insultos y reformularlos en términos de intereses legítimos.";
+        logHistory("Taller Parafraseo", "Traducción Desapasionada", "RECHAZADO");
+      } else {
+        status.innerHTML = "🛡️ DICTAMEN: INSUFICIENTE (FALTA RESCATAR INTERESES)";
+        feedback.innerHTML = "No se identificó un rescate claro de las necesidades o valores de fondo (certeza, reconocimiento, memoria afectiva). Intenta con: 'Si he comprendido bien, lo que usted busca es...'";
+        logHistory("Taller Parafraseo", "Traducción Desapasionada", "RECHAZADO");
+      }
+
+      saveState();
+    }
+
+    /* ==========================================================================
+       8. TAB 4: CERTIFICATION EXAM QUIZ
+       ========================================================================== */
+
+    const QUIZ_QUESTIONS = [
+      {
+        id: 1,
+        phase: "Fase 1: Discurso de Apertura (DAM)",
+        question: "¿Cuál de los siguientes es un elemento INDISPENSABLE del Discurso de Apertura según la lámina 127 del Instituto?",
+        options: [
+          { text: "Explicar a las partes que el mediador decidirá la solución si ellos no se ponen de acuerdo en 2 horas.", correct: false, reason: "El mediador nunca decide; la mediación se sustenta en la autodeterminación de las partes." },
+          { text: "Avisar que el facilitador puede tomar notas y asegurar formalmente que serán destruidas al finalizar el proceso.", correct: true, reason: "Elemento obligatorio del DAM (Lámina 127): preserva la confidencialidad absoluta del procedimiento." },
+          { text: "Solicitar que los abogados de las partes tomen la palabra y excluyan a los representados.", correct: false, reason: "Contrario a la esencia protagónica de las partes en los MASC." },
+          { text: "Obligar a las partes a renunciar a sus derechos civiles y laborales para entrar a la sesión.", correct: false, reason: "Los derechos irrenunciables no pueden ser vulnerados ni condicionados." }
+        ]
+      },
+      {
+        id: 2,
+        phase: "Fase 2: Recolección de Información",
+        question: "En la técnica de parafraseo o traducción desapasionada, el objetivo primordial consiste en:",
+        options: [
+          { text: "Repetir palabra por palabra lo que la parte dijo, incluyendo insultos para que la otra parte escuche la gravedad.", correct: false, reason: "Repetir insultos revictimiza y escala el conflicto destructivamente." },
+          { text: "Eliminar adjetivos descalificativos y agresiones, rescatando el interés, necesidad o preocupación legítima.", correct: true, reason: "Definición exacta de la técnica (Presentación 'El Arte de la Traducción Desapasionada')." },
+          { text: "Aconsejar legalmente a la parte sobre cómo declarar mejor ante el juez.", correct: false, reason: "El mediador no brinda asesoría jurídica particular a las partes." },
+          { text: "Guardar silencio total durante toda la sesión sin intervenir verbalmente.", correct: false, reason: "La facilitación exige escucha activa e intervenciones estructuradas." }
+        ]
+      },
+      {
+        id: 3,
+        phase: "Fase 3: Identificación de Temas y Agenda",
+        question: "Al elaborar la agenda de trabajo en el rotafolio, el facilitador debe redactar los puntos de conflicto en términos de:",
+        options: [
+          { text: "Culpabilidades y acusaciones directas para delimitar las faltas cometidas.", correct: false, reason: "Atenta contra la neutralidad y genera resistencia psicológica inmediata." },
+          { text: "Temas neutrales orientados hacia el futuro y los intereses a resolver.", correct: true, reason: "Principio de la Fase 3 (Lámina 94): los temas se nombran de forma neutral sin prejuzgar." },
+          { text: "Demandas judiciales formuladas con terminología procesal estricta.", correct: false, reason: "La mediación es no adversarial y no se estructura como demanda judicial." },
+          { text: "Órdenes de pago perentorias innegociables.", correct: false, reason: "Vulnera la voluntariedad y flexibilidad del proceso." }
+        ]
+      },
+      {
+        id: 4,
+        phase: "Fase 4: Generación de Opciones",
+        question: "¿Qué técnica es recomendable utilizar si las partes manifiestan desconfianza y se resisten a proponer alternativas en sesión conjunta?",
+        options: [
+          { text: "El Caucus o Sesión Privada individual, manteniendo el principio de equidad y confidencialidad.", correct: true, reason: "Herramienta clave prevista en el DAM y Fase 4: permite explorar opciones confidenciales sin presiones." },
+          { text: "Suspender definitivamente el trámite y enviarlos a la cárcel por desacato.", correct: false, reason: "El mediador no tiene facultades coercitivas ni punitivas." },
+          { text: "Proponer una solución unilateral del mediador y exigir su firma inmediata.", correct: false, reason: "Atenta contra la autodeterminación; el acuerdo debe emanar de las partes." },
+          { text: "Hacer pública la información confidencial para forzar la negociación.", correct: false, reason: "Infracción grave de confidencialidad sancionada por la ley." }
+        ]
+      },
+      {
+        id: 5,
+        phase: "Fase 5: Evaluación de Opciones",
+        question: "¿Cuál es la función del 'Agente de la Realidad' en la evaluación de opciones?",
+        options: [
+          { text: "Imponer multas a la opción más costosa.", correct: false, reason: "Concepto erróneo." },
+          { text: "Cuestionar constructivamente la viabilidad práctica, económica y jurídica de la opción con preguntas reflexivas.", correct: true, reason: "Doctrina MASC: permite a las partes contrastar si su opción es realmente sostenible y ejecutable." },
+          { text: "Actuar como perito valuador judicial con dictamen obligatorio.", correct: false, reason: "El facilitador no emite peritajes vinculantes." },
+          { text: "Elegir la opción que más le convenga a la institución mediadora.", correct: false, reason: "Grave conflicto de interés y pérdida de imparcialidad." }
+        ]
+      },
+      {
+        id: 6,
+        phase: "Fase 6: Acuerdo",
+        question: "Según el Art. 29 de la Ley de Mecanismos Alternativos (LMASC), los convenios sancionados y registrados tienen:",
+        options: [
+          { text: "Carácter de simple carta de intención sin fuerza de ejecución.", correct: false, reason: "Contrario a la ley; el convenio tiene plena fuerza legal." },
+          { text: "Igual eficacia y autoridad que la Cosa Juzgada o sentencia ejecutoriada, exigible por la Vía de Apremio.", correct: true, reason: "Cita textual del Art. 29 LMASC y lámina 183 de la Guía de Fin de Curso." },
+          { text: "Obligación de someterse a juicio ordinario completo antes de cobrar cualquier adeudo.", correct: false, reason: "La vía de apremio evita precisamente el juicio ordinario largo." },
+          { text: "Validez únicamente si un juez de lo penal lo aprueba en materia civil.", correct: false, reason: "Error procesal de materias competenciales." }
+        ]
+      }
+    ];
+
+    function renderQuiz() {
+      const container = document.getElementById("quizContainer");
+      if (!container) return;
+
+      container.innerHTML = QUIZ_QUESTIONS.map((q, qIndex) => {
+        const userChoice = state.quizAnswers[q.id];
+        const isAnswered = userChoice !== undefined;
+
+        return `
+          <div class="question-block" id="quizBlock_${q.id}">
+            <div style="font-size: 0.75rem; text-transform: uppercase; color: var(--accent); margin-bottom: 0.25rem;">
+              Reactivo ${qIndex + 1} de ${QUIZ_QUESTIONS.length} · ${q.phase}
+            </div>
+            <div class="question-header">${q.question}</div>
+            <div class="quiz-options">
+              ${q.options.map((opt, optIdx) => {
+                let btnClass = "option-btn";
+                if (isAnswered) {
+                  if (opt.correct) btnClass += " selected-correct";
+                  else if (userChoice === optIdx) btnClass += " selected-incorrect";
+                }
+
+                return `
+                  <button class="${btnClass}" ${isAnswered ? 'disabled' : ''} onclick="answerQuiz(${q.id}, ${optIdx})">
+                    <span class="option-letter">${String.fromCharCode(65 + optIdx)}</span>
+                    <div>
+                      <div>${opt.text}</div>
+                      ${isAnswered ? `<div style="font-size: 0.8rem; margin-top: 0.35rem; color: ${opt.correct ? '#6ee7b7' : '#fca5a5'};">${opt.correct ? '✅ Justificación oficial: ' : '❌ Error dogmático: '}${opt.reason}</div>` : ''}
+                    </div>
+                  </button>
+                `;
+              }).join("")}
+            </div>
+          </div>
+        `;
+      }).join("");
+
+      updateQuizScore();
+    }
+
+    function answerQuiz(qId, optIdx) {
+      state.quizAnswers[qId] = optIdx;
+      const q = QUIZ_QUESTIONS.find(item => item.id === qId);
+      const isCorrect = q?.options[optIdx]?.correct;
+
+      logHistory("Examen", `Reactivo ${qId} (${q.phase})`, isCorrect ? "CORRECTO" : "INCORRECTO");
+      saveState();
+      renderQuiz();
+    }
+
+    function resetQuiz() {
+      if (confirm("¿Deseas reiniciar los reactivos del examen para contestarlos nuevamente?")) {
+        state.quizAnswers = {};
+        saveState();
+        renderQuiz();
+      }
+    }
+
+    function updateQuizScore() {
+      let correct = 0;
+      let totalAnswered = 0;
+      QUIZ_QUESTIONS.forEach(q => {
+        const ans = state.quizAnswers[q.id];
+        if (ans !== undefined) {
+          totalAnswered++;
+          if (q.options[ans]?.correct) correct++;
+        }
+      });
+      const report = document.getElementById("quizScoreReport");
+      if (report) {
+        report.textContent = `Aciertos: ${correct} de ${QUIZ_QUESTIONS.length} evaluados (${totalAnswered} respondidos)`;
+      }
+    }
+
+    /* ==========================================================================
+       9. TAB NAVIGATION & GENERAL INITIALIZATION
+       ========================================================================== */
+
+    function switchTab(tabId) {
+      state.activeTab = tabId;
+      document.querySelectorAll(".tab-content").forEach(el => el.classList.remove("active"));
+      document.querySelectorAll(".nav-btn").forEach(el => el.classList.remove("active"));
+
+      const targetTab = document.getElementById("tab-" + tabId);
+      if (targetTab) targetTab.classList.add("active");
+
+      const navBtns = document.querySelectorAll(".nav-btn");
+      if (tabId === "cases") navBtns[0]?.classList.add("active");
+      if (tabId === "map") navBtns[1]?.classList.add("active");
+      if (tabId === "dam-trainer") navBtns[2]?.classList.add("active");
+      if (tabId === "quiz") navBtns[3]?.classList.add("active");
+      if (tabId === "audit") navBtns[4]?.classList.add("active");
+
+      saveState();
+    }
+
+    function updateUI() {
+      const score = calculateReadinessIndex();
+      document.getElementById("scoreDisplay").textContent = score + "%";
+      document.getElementById("scoreBar").style.width = score + "%";
+      document.getElementById("streakDisplay").textContent = state.streakDays + " día" + (state.streakDays > 1 ? "s" : "");
+
+      // Stats
+      const approvedPhases = Object.values(state.completedSimPhases).filter(Boolean).length;
+      document.getElementById("statCasesCount").textContent = `${approvedPhases}/6`;
+
+      let correctQuiz = 0;
+      QUIZ_QUESTIONS.forEach(q => {
+        const userAns = state.quizAnswers[q.id];
+        if (userAns !== undefined && q.options[userAns]?.correct) correctQuiz++;
+      });
+      document.getElementById("statQuizCount").textContent = `${correctQuiz}/${QUIZ_QUESTIONS.length}`;
+
+      const totalDam = DAM_CHECKLIST_ITEMS.length;
+      const checkedDam = Object.values(state.damChecklistState).filter(Boolean).length;
+      const damPct = Math.round((checkedDam / totalDam) * 100);
+      document.getElementById("statDamScore").textContent = damPct + "%";
+      document.getElementById("statGlobalIndex").textContent = score + "%";
+
+      // Render History Table
+      const historyTbody = document.getElementById("historyTableBody");
+      if (historyTbody) {
+        historyTbody.innerHTML = state.historyLog.map(h => `
+          <tr>
+            <td style="color: var(--text-dim);">${h.timestamp}</td>
+            <td><strong>${h.module}</strong></td>
+            <td>${h.action}</td>
+            <td><span style="color: ${h.status.includes('ACREDITADO') || h.status.includes('CORRECTO') ? 'var(--success)' : 'var(--danger)'}; font-weight:700;">${h.status}</span></td>
+          </tr>
+        `).join("") || `<tr><td colspan="4" style="text-align:center; color:var(--text-dim);">Sin registros de auditoría recientes. Realiza una actividad para comenzar.</td></tr>`;
+      }
+    }
+
+    window.addEventListener("DOMContentLoaded", () => {
+      loadState();
+      renderActiveCase();
+      renderPhasesTimeline();
+      renderDamChecklist();
+      renderQuiz();
+      switchTab(state.activeTab || "cases");
+    });
+  </script>
+</body>
+</html>
