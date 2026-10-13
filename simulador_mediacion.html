@@ -1504,54 +1504,101 @@ Lupita, por su parte, se enfrenta a una situación económica complicada. Aunque
       }
 
       static parseGenericConflict(text) {
-        // Detect proper names or parties
+        // Normalize sentences
         const sentences = text.split(/[.\n]+/).map(s => s.trim()).filter(s => s.length > 5);
         
-        // Find capitalized candidate words
-        const words = text.match(/\b[A-ZÁÉÍÓÚÑ][a-záéíóúñ]+\b/g) || [];
+        // Comprehensive stop words (articles, prepositions, common titles and honorifics)
+        const stopWords = new Set([
+          "Una", "Uno", "El", "La", "Los", "Las", "Tras", "Cuando", "Aunque", "Durante", "Por", 
+          "Para", "Con", "De", "En", "Pero", "Como", "Este", "Esta", "Ese", "Esa", "Se", "Su", 
+          "Sus", "Al", "Don", "Doña", "Señor", "Señora", "Sr", "Sra", "Lic", "Licenciado", 
+          "Licenciada", "Ing", "Doctor", "Doctora", "Dr", "Dra", "Prof", "Profr", "Calle", 
+          "Avenida", "Colonia", "Caso", "Parte", "Partes", "Centro", "Instituto", "Mesa", 
+          "Ambas", "Ambos", "Cada", "Otro", "Otra", "Todo", "Toda", "Todos", "Todas", "Además", "Ademas"
+        ]);
+
+        // Explicit party pairing detection e.g. "Don Carlos y la señora Mariana" or "Juan contra Pedro"
+        const pairRegex = /(?:don|doña|señor|señora|sra|sr)?\s*([A-ZÁÉÍÓÚÑ][a-záéíóúñ]{2,})\s+(?:y|e|contra|frente a)\s+(?:el señor|la señora|don|doña|sra|sr)?\s*([A-ZÁÉÍÓÚÑ][a-záéíóúñ]{2,})/i;
+        const pairMatch = text.match(pairRegex);
+
         const freq = {};
-        const stopWords = new Set(["Una", "Uno", "El", "La", "Los", "Las", "Tras", "Cuando", "Aunque", "Durante", "Por", "Para", "Con", "De", "En", "Pero", "Como", "Este", "Esta", "Ese", "Esa", "Se", "Su", "Sus", "Al"]);
-        
+        const words = text.match(/\b[A-ZÁÉÍÓÚÑ][a-záéíóúñ]{2,}\b/g) || [];
         words.forEach(w => {
           if (!stopWords.has(w)) {
             freq[w] = (freq[w] || 0) + 1;
           }
         });
 
-        const sortedCandidates = Object.keys(freq).sort((a, b) => freq[b] - a[a]);
-        const p1Name = sortedCandidates[0] || "Parte Solicitante";
-        const p2Name = sortedCandidates[1] || "Parte Complementaria";
+        // Boost pair match if detected
+        if (pairMatch) {
+          const n1 = pairMatch[1].trim();
+          const n2 = pairMatch[2].trim();
+          if (!stopWords.has(n1)) freq[n1] = (freq[n1] || 0) + 15;
+          if (!stopWords.has(n2)) freq[n2] = (freq[n2] || 0) + 14;
+        }
 
-        // Identify key problem theme
-        let themeTag = "Civil / Patrimonial";
-        if (/hered|testament|famil|hij|matrimoni|divorci/i.test(text)) themeTag = "Familiar / Sucesorio";
-        else if (/arrend|inmuebl|rent|casa|inquilin|local/i.test(text)) themeTag = "Arrendamiento / Patrimonial";
-        else if (/vecin|ruid|árbol|árboles|colind/i.test(text)) themeTag = "Comunitario / Vecinal";
-        else if (/socio|negoci|empresa|deuda|pagar/i.test(text)) themeTag = "Mercantil / Societario";
+        const sortedCandidates = Object.keys(freq).sort((a, b) => freq[b] - freq[a]);
+        const p1Name = sortedCandidates[0] || "Parte Solicitante";
+        const p2Name = sortedCandidates[1] || (sortedCandidates[0] ? "Parte Complementaria" : "Segunda Parte");
+
+        // Thematic scoring categorization
+        const themes = [
+          { tag: "Comunitario / Vecinal", regex: /vecin|ruid|árbol|árboles|colind|barda|taller|cochera|humo|mascota|perro|olor/gi },
+          { tag: "Arrendamiento / Inmobiliario", regex: /arrend|inquilin|arrendador|renta|depósito|desalojo|inmueble|local comercial|desahucio/gi },
+          { tag: "Familiar / Sucesorio", regex: /hered|testament|sucesi|albacea|divorci|custodia|pensión|alimentos|patria potestad|cónyuge|matrimoni|hijo|hija/gi },
+          { tag: "Mercantil / Societario", regex: /socio|societario|empresa|factura|pagaré|deuda|proveedor|contrato comercial|cliente|mercantil|negocio/gi },
+          { tag: "Civil / Patrimonial", regex: /daño|perjuicio|reparación|incumplimiento|préstamo|vehículo|choque|propiedad|escritura/gi }
+        ];
+
+        let bestTag = "Civil / Patrimonial";
+        let maxMatches = 0;
+        themes.forEach(t => {
+          const matches = (text.match(t.regex) || []).length;
+          if (matches > maxMatches) {
+            maxMatches = matches;
+            bestTag = t.tag;
+          }
+        });
+
+        // Sentences mentioning parties
+        const p1Sentences = sentences.filter(s => s.toLowerCase().includes(p1Name.toLowerCase()));
+        const p2Sentences = sentences.filter(s => s.toLowerCase().includes(p2Name.toLowerCase()));
+
+        const p1Sit = p1Sentences[0] || sentences[0] || `Involucrado directo en la controversia relativa a ${bestTag}.`;
+        const p2Sit = p2Sentences[0] || sentences[1] || `Parte requerida o complementaria en el procedimiento de facilitación.`;
+
+        // Extract positions & interests heuristically
+        const posRegex = /(?:exige|pretende|quiere|demanda|reclama|sostiene|afirma|amenaza|insiste)\s+([^,.;]+)/i;
+        const intRegex = /(?:necesita|busca|desea|preocupa|sustento|ingreso|tranquilidad|seguridad|paz|evitar|reconocimiento)\s+([^,.;]+)/i;
+
+        const p1PosMatch = p1Sit.match(posRegex);
+        const p2PosMatch = p2Sit.match(posRegex);
+        const p1IntMatch = p1Sit.match(intRegex);
+        const p2IntMatch = p2Sit.match(intRegex);
 
         const summary = sentences.slice(0, 2).join(". ") + ".";
 
         return {
           title: `Caso Dinámico: Controversia entre ${p1Name} y ${p2Name}`,
           rawText: text,
-          tag: themeTag,
-          summary: summary || "Controversia entre partes con intereses contrapuestos en proceso de facilitación.",
+          tag: bestTag,
+          summary: summary || `Diferencia de percepciones y derechos sobre materia de ${bestTag} sujeta a mediación voluntaria.`,
           party1: {
             name: p1Name,
-            role: "Parte Involucrada A",
-            situation: sentences[0] || "Manifiesta afectación directa y busca solución a sus requerimientos.",
-            position: "Exige el cumplimiento estricto de su pretensión inicial.",
-            interest: "Seguridad, respeto, tranquilidad y solución justa a sus necesidades materiales o emocionales."
+            role: `Parte Solicitante (${p1Name})`,
+            situation: p1Sit,
+            position: p1PosMatch ? `Exige ${p1PosMatch[1].trim()}` : `Exige el cese de afectaciones o cumplimiento de su pretensión inmediata.`,
+            interest: p1IntMatch ? `Prioriza ${p1IntMatch[1].trim()}` : `Tranquilidad, seguridad jurídica, respeto a sus derechos y certidumbre futura.`
           },
           party2: {
             name: p2Name,
-            role: "Parte Involucrada B",
-            situation: sentences[1] || "Defiende su perspectiva y sostiene que sus motivos no han sido comprendidos.",
-            position: "Rechaza someterse a exigencias unilaterales sin contraprestación recíproca.",
-            interest: "Reconocimiento, certidumbre, equidad y preservación de su patrimonio o tranquilidad."
+            role: `Parte Complementaria (${p2Name})`,
+            situation: p2Sit,
+            position: p2PosMatch ? `Sostiene ${p2PosMatch[1].trim()}` : `Rechaza demandas desproporcionadas y defiende la legitimidad de sus actos.`,
+            interest: p2IntMatch ? `Busca ${p2IntMatch[1].trim()}` : `Preservar su sustento, reconocimiento recíproco, equidad y alternativas viables.`
           },
-          coreConflict: `Conflicto de intereses entre ${p1Name} y ${p2Name} respecto a hechos controvertidos y percepciones mutuas divergentes.`,
-          harvardGuidance: `Desmontar la rigidez de las demandas entre ${p1Name} y ${p2Name} para identificar las necesidades compartidas de tranquilidad, certeza y equidad.`,
+          coreConflict: `Tensión entre las pretensiones de ${p1Name} y las motivaciones de ${p2Name} en el ámbito de ${bestTag}.`,
+          harvardGuidance: `Diferenciar las posiciones rígidas ('lo que dicen querer') de los intereses subyacentes ('por qué lo necesitan realmente: tranquilidad, sustento, reconocimiento').`,
           
           phasesDialogue: [
             {
